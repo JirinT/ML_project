@@ -30,4 +30,4 @@ Project stages:
 			i. Cross-validation
 	7. Build the CNN model
 	8. Evaluate the CNN
-Optimize the CNN![image](https://github.com/JirinT/ML_project/assets/119747632/c64195d6-3f0c-4e6a-8eee-97923dbba761)
+	9. Optimize the CNN!
