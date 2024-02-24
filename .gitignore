@@ -1,3 +1,5 @@
 
 .DS_Store
-dataset_survey/caxton_dataset_final.csv
+*.csv
+ml_env
+caxton_dataset
