@@ -18,10 +18,15 @@ class SimpleDataLoader():
             self.data_frame = None
         self.num_samples_cumulated_per_folder = []
         self.num_samples = self.count_samples()
-        self.preprocessors = preprocessors
+        
+        self.current_idx = 0
+        self.indices = np.arange(self.num_samples)
+        np.random.shuffle(self.indices)
 
+        self.preprocessors = preprocessors
         if self.preprocessors == None:
             self.preprocessors = []
+
     
     def __len__(self):
 
@@ -107,13 +112,16 @@ class SimpleDataLoader():
 
         return np.array(data), np.array(labels)
     
-    def __iter__(self):
+    def __iter__(self): # creates iterable object
         return self
-    
-    def __next__(self):
-        indices = np.arange(self.num_samples)
-        np.random.shuffle(indices)
-        for sample_idx in indices:
-            data = self.load_data(sample_idx)
 
-            return sample_idx, data
+    def __next__(self): # this method defines the iterator for the iterable object created by __iter__
+        if self.current_idx >= self.num_samples:
+            raise StopIteration
+
+        sample_idx = self.indices[self.current_idx] 
+        data = self.load_data(sample_idx)
+        self.current_idx += 1
+        
+        return sample_idx, data
+    
