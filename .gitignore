@@ -2,4 +2,4 @@
 *.csv
 ml_env
 caxton_dataset
-.icloud
+*.icloud

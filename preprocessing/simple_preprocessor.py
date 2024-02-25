@@ -36,3 +36,4 @@ class SimplePreprocessor:
         img_preprocessed = self.rgb_to_grayscale(img_resized)
 
         return img_preprocessed
+    
