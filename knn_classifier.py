@@ -16,7 +16,7 @@ data_path = "./caxton_dataset"
 simple_preprocessor = SimplePreprocessor(width=32, height=32)
 dataloader = SimpleDataLoader(data_path, preprocessors=[simple_preprocessor])
 
-data, labels = dataloader.load_data(num_samples=1000)
+data, labels = dataloader.load_data(num_samples=10000)
 
 imgs_flat = data.reshape(data.shape[0], -1)
 labels_flat = labels.reshape(labels.shape[0], -1)

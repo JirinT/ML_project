@@ -94,12 +94,16 @@ class SimpleDataLoader():
             img_path = os.path.join("./", img_path)
 
             # Load your data from file
-            img = self.load_image(img_path)
-            if self.preprocessors is not None:
-                for p in self.preprocessors:
-                    img = p.preprocess(img)
-            data.append(img)
-            labels.append(self.create_label(self.data_frame.iloc[idx]))
+            try:
+                img = self.load_image(img_path)
+                if self.preprocessors is not None:
+                    for p in self.preprocessors:
+                        img = p.preprocess(img)
+                data.append(img)
+                labels.append(self.create_label(self.data_frame.iloc[idx]))
+            except OSError as e:
+                print("Error processing image:", e)
+                continue
 
         return np.array(data), np.array(labels)
     
