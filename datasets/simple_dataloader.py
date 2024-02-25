@@ -20,7 +20,6 @@ class SimpleDataLoader():
 
         self.num_samples = self.count_samples()
         self.preprocessors = preprocessors
-        self.preprocessors.coordinates = []
 
   # here i deleted the if preprocesors=None then preprocesors is []
   # because then in load_data() and count_samples() we are using "if self.preprocessors is not None:..."
