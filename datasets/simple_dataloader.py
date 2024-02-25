@@ -25,7 +25,7 @@ class SimpleDataLoader():
     
     def __len__(self):
 
-        return self.num_batches
+        return self.num_samples
 
     def count_samples(self):
         if self.data_frame is not None:
@@ -106,14 +106,4 @@ class SimpleDataLoader():
                 continue
 
         return np.array(data), np.array(labels)
-    
-    def __iter__(self):
-        return self
-    
-    def __next__(self):
-        indices = np.arange(self.num_samples)
-        np.random.shuffle(indices)
-        for sample_idx in indices:
-            data = self.load_data(sample_idx)
 
-            return sample_idx, data
