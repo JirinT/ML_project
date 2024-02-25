@@ -13,27 +13,22 @@ from datasets.simple_dataloader import SimpleDataLoader
 # demo implementation for knn, enter more details later
 
 data_path = "./caxton_dataset"
-batch_size = 32
 simple_preprocessor = SimplePreprocessor(width=32, height=32)
-dataloader = SimpleDataLoader(data_path, batch_size=batch_size, preprocessors=[simple_preprocessor])
+dataloader = SimpleDataLoader(data_path, preprocessors=[simple_preprocessor])
+
+data, labels = dataloader.load_data(num_samples=1000)
+
+imgs_flat = data.reshape(data.shape[0], -1)
+labels_flat = labels.reshape(labels.shape[0], -1)
+
+(trainX, testX, trainY, testY) = train_test_split(imgs_flat, labels_flat,
+	test_size=0.25, random_state=42)
 
 knn = KNeighborsClassifier(n_neighbors=3)
 
-max_batches = 100
+knn.fit(trainX, trainY)
 
-for batch_idx, batch_data in tqdm(enumerate(dataloader), total=max_batches, desc="Training"):
-    batch_images = []
-    batch_labels = []
-    
-    for image_data, label in batch_data[1]:
-        batch_images.append(image_data)
-        batch_labels.append(label)
-    
-    batch_images_flat = np.array(batch_images).reshape(len(batch_images), -1)
-    batch_labels_flat = np.array(batch_labels)
-    
-    knn.fit(batch_images_flat, batch_labels_flat)
-    
-    if batch_idx + 1 >= max_batches:
-        break
+test_accuracy = knn.score(testX, testY)
+print("Test Accuracy: {:.2f}%".format(test_accuracy * 100))
+
 

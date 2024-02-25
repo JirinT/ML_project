@@ -6,19 +6,18 @@ import pandas as pd
 
 from bisect import bisect_right
 from PIL import Image
+from tqdm import tqdm
 
 class SimpleDataLoader():
-    def __init__(self, data_path, batch_size, preprocessors=None):
+    def __init__(self, data_path, preprocessors=None):
         self.csv_file_name = "caxton_dataset_filtered.csv"
         self.data_path = data_path
         if self.csv_file_name in os.listdir(self.data_path):
             self.data_frame = pd.read_csv(os.path.join(self.data_path, self.csv_file_name))
         else:
             self.data_frame = None
-        self.batch_size = batch_size
         self.num_samples_cumulated_per_folder = []
         self.num_samples = self.count_samples()
-        self.num_batches = (self.num_samples + batch_size - 1) // batch_size
         self.preprocessors = preprocessors
 
         if self.preprocessors == None:
@@ -83,28 +82,34 @@ class SimpleDataLoader():
 
         return image_data
 
-    def load_data(self, idx):
-        # Use binary search to find the folder containing the image with the current index
-        img_path = self.data_frame["img_path"][idx]
-        img_path = os.path.join("./", img_path)
-
-        # Load your data from file
-        img = self.load_image(img_path)
-        if self.preprocessors is not None:
-            for p in self.preprocessors:
-                img = p.preprocess(img)
-        data = img
-        label = self.create_label(self.data_frame.iloc[idx])
-
-        return data, label
-    
-    def __iter__(self):
+    def load_data(self, num_samples):
         indices = np.arange(self.num_samples)
         np.random.shuffle(indices)
-        for batch_idx in range(self.num_batches):
-            start_idx = batch_idx * self.batch_size
-            end_idx = min((batch_idx + 1) * self.batch_size, self.num_samples)
-            batch_indices = indices[start_idx:end_idx]
-            batch_data = [self.load_data(idx) for idx in batch_indices]
+        indices = indices[:num_samples]
 
-            yield batch_idx, batch_data
+        data = []
+        labels = []
+        for idx in tqdm(indices, desc="Sample loading"):
+            img_path = self.data_frame["img_path"][idx]
+            img_path = os.path.join("./", img_path)
+
+            # Load your data from file
+            img = self.load_image(img_path)
+            if self.preprocessors is not None:
+                for p in self.preprocessors:
+                    img = p.preprocess(img)
+            data.append(img)
+            labels.append(self.create_label(self.data_frame.iloc[idx]))
+
+        return np.array(data), np.array(labels)
+    
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        indices = np.arange(self.num_samples)
+        np.random.shuffle(indices)
+        for sample_idx in indices:
+            data = self.load_data(sample_idx)
+
+            return sample_idx, data
