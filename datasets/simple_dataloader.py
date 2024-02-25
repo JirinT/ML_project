@@ -20,6 +20,7 @@ class SimpleDataLoader():
 
         self.num_samples = self.count_samples()
         self.preprocessors = preprocessors
+        self.preprocessors.coordinates = []
 
   # here i deleted the if preprocesors=None then preprocesors is []
   # because then in load_data() and count_samples() we are using "if self.preprocessors is not None:..."
@@ -82,6 +83,12 @@ class SimpleDataLoader():
                                            # returns RGB matrixes in np array
         return image_data
 
+    def nozzle_coordinates(self, idx):
+        # fcn to get coordinates of nozzle from dataset for specific image and save them to preprocessor atribute
+        x = self.data_frame["nozzle_tip_x"][idx]
+        y = self.data_frame["nozzle_tip_y"][idx]
+        self.preprocessors.coordinates = [x, y]
+
     def load_data(self, num_samples_subset):
         indices = np.arange(self.num_samples)
         np.random.shuffle(indices)
@@ -92,7 +99,9 @@ class SimpleDataLoader():
         for idx in tqdm(indices, desc="Sample loading"):
             img_path = self.data_frame["img_path"][idx]
             img_path = os.path.join("./", img_path)
-
+            
+            self.nozzle_coordinates(idx) # nozzle coordinates as [x, y] are saved to preprocesor.coordinates
+            
             # Load your data from file
             try:
                 img = self.load_image(img_path)
