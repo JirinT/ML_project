@@ -1,6 +1,6 @@
 import os
 
-import cv2
+import cv2 as cv
 import numpy as np
 import pandas as pd
 
@@ -12,25 +12,21 @@ class SimpleDataLoader():
     def __init__(self, data_path, preprocessors=None):
         self.csv_file_name = "caxton_dataset_filtered.csv"
         self.data_path = data_path
+
         if self.csv_file_name in os.listdir(self.data_path):
             self.data_frame = pd.read_csv(os.path.join(self.data_path, self.csv_file_name))
         else:
             self.data_frame = None
-        self.num_samples_cumulated_per_folder = []
+
         self.num_samples = self.count_samples()
-        
-        self.current_idx = 0
-        self.indices = np.arange(self.num_samples)
-        np.random.shuffle(self.indices)
-
         self.preprocessors = preprocessors
-        if self.preprocessors == None:
-            self.preprocessors = []
 
+  # here i deleted the if preprocesors=None then preprocesors is []
+  # because then in load_data() and count_samples() we are using "if self.preprocessors is not None:..."
+  # which would be always true, ([] != None)
     
     def __len__(self):
-
-        return self.num_batches
+        return self.num_samples
 
     def count_samples(self):
         if self.data_frame is not None:
@@ -82,15 +78,14 @@ class SimpleDataLoader():
         Returns:
             numpy.ndarray: The image data as a NumPy array.
         """
-        image = Image.open(image_path)
-        image_data = np.array(image)
-
+        image_data = cv.imread(image_path) # reading using openCV, its same as before but one line only.
+                                           # returns RGB matrixes in np array
         return image_data
 
-    def load_data(self, num_samples):
+    def load_data(self, num_samples_subset):
         indices = np.arange(self.num_samples)
         np.random.shuffle(indices)
-        indices = indices[:num_samples]
+        indices = self.indices[:num_samples_subset] # here we pick number of indices from shuffled indices
 
         data = []
         labels = []
@@ -111,17 +106,3 @@ class SimpleDataLoader():
                 continue
 
         return np.array(data), np.array(labels)
-    
-    def __iter__(self): # creates iterable object
-        return self
-
-    def __next__(self): # this method defines the iterator for the iterable object created by __iter__
-        if self.current_idx >= self.num_samples:
-            raise StopIteration
-
-        sample_idx = self.indices[self.current_idx] 
-        data = self.load_data(sample_idx)
-        self.current_idx += 1
-        
-        return sample_idx, data
-    
