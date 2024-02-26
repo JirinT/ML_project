@@ -28,6 +28,7 @@ class SimplePreprocessor:
     def rgb_to_grayscale(self, image):
         # returns gray scale matrix
         gray_img = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+        gray_img = cv.equalizeHist(gray_img) # increasing contrast, so the printed filament is more visible - this should be changed, does not work very well so far
         return gray_img
 
     def preprocess(self, image):
