@@ -20,9 +20,9 @@ class SimplePreprocessor:
         # returns image with dimensions crop_size x crop_size
         x = self.coordinates[0] # x coordinate of nozzle in image
         y = self.coordinates[1] # y coordinate of nozzle in image
-        half_crop_size = np.floor(crop_size/2) # needs to be integer.
+        half_crop_size = int(np.floor(crop_size/2)) # needs to be integer.
         cropped_image = image[y-half_crop_size : y+half_crop_size, x-half_crop_size-50 : x+half_crop_size] # with -50 works better for images ive tried
-        
+    
         return cropped_image
     
     def rgb_to_grayscale(self, image):
@@ -30,8 +30,8 @@ class SimplePreprocessor:
         gray_img = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
         return gray_img
 
-    def preprocess(self, image, nozzle_coordinates):
-        img_cropped = self.crop_image_around_nozzle(image, nozzle_coordinates)
+    def preprocess(self, image):
+        img_cropped = self.crop_image_around_nozzle(image)
         img_resized = self.resize_image(img_cropped)
         img_preprocessed = self.rgb_to_grayscale(img_resized)
 
