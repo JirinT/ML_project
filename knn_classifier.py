@@ -12,12 +12,12 @@ from datasets.simple_dataloader import SimpleDataLoader
 
 # demo implementation for knn, enter more details later
 
-data_path = "./caxton_dataset"
+data_path = "/Volumes/Samsung USB" # change this to your directory with dataset
 simple_preprocessor = SimplePreprocessor(width=32, height=32)
-dataloader = SimpleDataLoader(data_path, preprocessors=[simple_preprocessor])
+dataloader = SimpleDataLoader(data_path, preprocessors=simple_preprocessor)
 
-data, labels = dataloader.load_data(num_samples=10000)
-
+data, labels = dataloader.load_data(num_samples_subset=10)
+# till here it works great :)
 imgs_flat = data.reshape(data.shape[0], -1)
 labels_flat = labels.reshape(labels.shape[0], -1)
 
@@ -30,5 +30,3 @@ knn.fit(trainX, trainY)
 
 test_accuracy = knn.score(testX, testY)
 print("Test Accuracy: {:.2f}%".format(test_accuracy * 100))
-
-

@@ -97,16 +97,20 @@ class SimpleDataLoader():
         labels = []
         for idx in tqdm(indices, desc="Sample loading"):
             img_path = self.data_frame["img_path"][idx]
-            img_path = os.path.join("./", img_path)
+            img_path = os.path.join(self.data_path, img_path) # I changed this because we need to connect the path where is the dataset and the local path in dataset
             
             self.nozzle_coordinates(idx) # nozzle coordinates as [x, y] are saved to preprocesor.coordinates
             
             # Load your data from file
             try:
                 img = self.load_image(img_path)
-                if self.preprocessors is not None:
+                
+                if isinstance(self.preprocessors, list):  # Check if preprocessors is a list
                     for p in self.preprocessors:
                         img = p.preprocess(img)
+                elif self.preprocessors is not None:  # Check if preprocessors is a single preprocessor instance
+                    img = self.preprocessors.preprocess(img)
+
                 data.append(img)
                 labels.append(self.create_label(self.data_frame.iloc[idx]))
             except OSError as e:
