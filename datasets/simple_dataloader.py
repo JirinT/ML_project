@@ -91,7 +91,7 @@ class SimpleDataLoader():
     def load_data(self, num_samples_subset):
         indices = np.arange(self.num_samples)
         np.random.shuffle(indices)
-        indices = self.indices[:num_samples_subset] # here we pick number of indices from shuffled indices
+        indices = indices[:num_samples_subset] # here we pick number of indices from shuffled indices
 
         data = []
         labels = []
