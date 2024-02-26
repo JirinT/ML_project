@@ -17,6 +17,7 @@ Project stages:
 	b. Resize the image without quality loss
 		i. Look up some strategies
 	c. Transform image to grayscale
+		- create higher contrast so the printed filament is more visible, or smth like that
 	d. Put image and label together
 -> this happens during dataloading
 4. Build the KNN model
