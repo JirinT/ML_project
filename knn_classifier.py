@@ -24,6 +24,7 @@ data, labels = dataloader.load_data(num_samples_subset=3000)
 imgs_flat = data.reshape(data.shape[0], -1) # flatten the image matrix to 1D vector
 labels_flat = labels.reshape(labels.shape[0], -1) # does this do anything ?
 
+# # this is just for visualisation of preprocessed images:
 # for img in data:
 # 	cv.imshow("Sample image", img)
 # 	cv.waitKey()
