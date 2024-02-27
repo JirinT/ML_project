@@ -15,7 +15,7 @@ class SimplePreprocessor:
         img_resized = cv.resize(image, (self.width, self.height), interpolation=self.inter)
         return img_resized
     
-    def crop_image_around_nozzle(self, image, crop_size=100):
+    def crop_image_around_nozzle(self, image, crop_size=240):
         # implement function to crop image around the nozzle based on its coordinates 
         # returns image with dimensions crop_size x crop_size
         x = self.coordinates[0] # x coordinate of nozzle in image
