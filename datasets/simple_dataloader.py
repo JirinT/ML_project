@@ -20,10 +20,6 @@ class SimpleDataLoader():
 
         self.num_samples = self.count_samples()
         self.preprocessors = preprocessors
-
-  # here i deleted the if preprocesors=None then preprocesors is []
-  # because then in load_data() and count_samples() we are using "if self.preprocessors is not None:..."
-  # which would be always true, ([] != None)
     
     def __len__(self):
         return self.num_samples
