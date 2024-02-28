@@ -15,11 +15,13 @@ from datasets.simple_dataloader import SimpleDataLoader
 
 # demo implementation for knn, enter more details later
 
-data_path = "/Volumes/Samsung USB" # change this to your directory with dataset
-simple_preprocessor = SimplePreprocessor(width=300, height=300) # width and height for the resizing
+data_path = r"INSERT PATH" # change this to your directory with dataset
+
+simple_preprocessor = SimplePreprocessor(width=30, height=30) # width and height for the resizing
 dataloader = SimpleDataLoader(data_path, preprocessors=simple_preprocessor)
 
-data, labels = dataloader.load_data(num_samples_subset=3000)
+data, labels = dataloader.load_data(num_samples_subset=None,start_idx=6,end_idx=30) #if you want you can specify a range of indices, that should be loadad
+
 # till here it works great :)
 imgs_flat = data.reshape(data.shape[0], -1) # flatten the image matrix to 1D vector
 labels_flat = labels.reshape(labels.shape[0], -1) # does this do anything ?
@@ -30,7 +32,7 @@ labels_flat = labels.reshape(labels.shape[0], -1) # does this do anything ?
 # 	cv.waitKey()
 
 (trainX, testX, trainY, testY) = train_test_split(imgs_flat, labels_flat, test_size=0.25, 
-												   stratify=labels_flat, random_state=42) # stratify method ensures that the labels will be distributed equally in train and test sets
+stratify=labels_flat, random_state=42) # stratify method ensures that the labels will be distributed equally in train and test sets
 
 # Cross validation:
 k_range = range(1,50) # k which will be tested, we can try to increase the number based on observartions

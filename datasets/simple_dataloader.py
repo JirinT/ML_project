@@ -9,6 +9,7 @@ from PIL import Image
 from tqdm import tqdm
 
 class SimpleDataLoader():
+
     def __init__(self, data_path, preprocessors=None):
         self.csv_file_name = "caxton_dataset_filtered.csv"
         self.data_path = data_path
@@ -21,6 +22,7 @@ class SimpleDataLoader():
         self.num_samples = self.count_samples()
         self.preprocessors = preprocessors
     
+
     def __len__(self):
         return self.num_samples
 
@@ -84,10 +86,14 @@ class SimpleDataLoader():
         y = self.data_frame["nozzle_tip_y"][idx]
         self.preprocessors.coordinates = [x, y]
 
-    def load_data(self, num_samples_subset):
-        indices = np.arange(self.num_samples)
-        np.random.shuffle(indices)
-        indices = indices[:num_samples_subset] # here we pick number of indices from shuffled indices
+    def load_data(self, num_samples_subset, start_idx=None, end_idx=None):
+
+        if start_idx is not None and end_idx is not None:     #checks if a range of indices is given 
+            indices = np.arange(start_idx, end_idx)
+        else:
+            indices = np.arange(self.num_samples)
+            np.random.shuffle(indices)
+            indices = indices[:num_samples_subset] # here we pick number of indices from shuffled indices
 
         data = []
         labels = []
