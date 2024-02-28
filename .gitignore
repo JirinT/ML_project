@@ -3,3 +3,4 @@
 ml_env
 caxton_dataset
 *.icloud
+*.pyc
