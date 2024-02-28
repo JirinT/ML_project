@@ -12,12 +12,18 @@ from tqdm import tqdm
 from preprocessing.simple_preprocessor import SimplePreprocessor
 from datasets.simple_dataloader import SimpleDataLoader
 
-data_path = r"INSERT PATH" # change this to your directory with dataset
+# add your data_paths here
+data_paths = {
+	"jan": "./caxton_dataset",
+	"leon": "test",
+	"jiri": "test"
+}
+data_path = data_paths["jan"] # change this to your name
 
 simple_preprocessor = SimplePreprocessor(width=30, height=30) # width and height for the resizing
 dataloader = SimpleDataLoader(data_path, preprocessors=simple_preprocessor)
 
-data, labels = dataloader.load_data(num_samples_subset=None,start_idx=6,end_idx=30) #if you want you can specify a range of indices, that should be loadad
+data, labels = dataloader.load_data(num_samples_subset=1000, start_idx=None, end_idx=None) #if you want you can specify a range of indices, that should be loadad
 
 imgs_flat = data.reshape(data.shape[0], -1) # flatten the image matrix to 1D vector
 labels_flat = labels.reshape(labels.shape[0], -1) # flatten the labels matrix to 1D vector

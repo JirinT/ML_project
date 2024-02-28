@@ -127,7 +127,7 @@ class SimpleDataLoader():
         labels = []
         for idx in tqdm(indices, desc="Sample loading"):
             img_path = self.data_frame["img_path"][idx]
-            img_path = os.path.join(self.data_path, img_path)
+            # img_path = os.path.join(self.data_path, img_path) -> file structure is not the same for me
             
             self.nozzle_coordinates(idx) # nozzle coordinates as [x, y] are saved to preprocesor.coordinates
             
