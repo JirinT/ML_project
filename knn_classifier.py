@@ -6,14 +6,11 @@ import matplotlib.pyplot as plt
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score # for cross validation
+from sklearn.model_selection import cross_val_score
 from tqdm import tqdm
 
-# Import our classes:
 from preprocessing.simple_preprocessor import SimplePreprocessor
 from datasets.simple_dataloader import SimpleDataLoader
-
-# demo implementation for knn, enter more details later
 
 data_path = r"INSERT PATH" # change this to your directory with dataset
 
@@ -22,9 +19,8 @@ dataloader = SimpleDataLoader(data_path, preprocessors=simple_preprocessor)
 
 data, labels = dataloader.load_data(num_samples_subset=None,start_idx=6,end_idx=30) #if you want you can specify a range of indices, that should be loadad
 
-# till here it works great :)
 imgs_flat = data.reshape(data.shape[0], -1) # flatten the image matrix to 1D vector
-labels_flat = labels.reshape(labels.shape[0], -1) # does this do anything ?
+labels_flat = labels.reshape(labels.shape[0], -1) # flatten the labels matrix to 1D vector
 
 # # this is just for visualisation of preprocessed images:
 # for img in data:
@@ -44,10 +40,9 @@ for k in k_range:
 
 	accuracies = cross_val_score(knn, X=trainX, y=trainY, cv=10) # returns 1D vector with the accuracies for each validation set, 
 																 # cv is the number of folds used in cross validation
-	k_accuracy.append(np.mean(accuracies)) # add the mean value of accuracies
+	k_accuracy.append(np.mean(accuracies))
 print("End of cross validation.")
 
-# print the accuracies:
 plt.figure("KNN cross validation")
 plt.plot(k_range, k_accuracy)
 plt.show()

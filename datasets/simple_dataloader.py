@@ -4,7 +4,6 @@ import cv2 as cv
 import numpy as np
 import pandas as pd
 
-from bisect import bisect_right
 from PIL import Image
 from tqdm import tqdm
 
@@ -27,6 +26,12 @@ class SimpleDataLoader():
         return self.num_samples
 
     def count_samples(self):
+        """
+        Count the number of samples in the dataset.
+
+        Returns:
+            int: The number of samples in the dataset.
+        """
         if self.data_frame is not None:
             num_samples = len(self.data_frame)
         else:
@@ -35,7 +40,15 @@ class SimpleDataLoader():
         return num_samples
 
     def create_label(self, df_item):
+        """
+        Create a one-hot encoded label vector for a single sample.
+        
+        Args:
+            df_item (pandas.Series): A single row from the dataset DataFrame.
 
+        Returns:
+            numpy.ndarray: The one-hot encoded label vector.
+        """
         num_classes_per_label = [3, 3, 3, 3]
         label_flow_rate = df_item.loc["flow_rate_class"]
         label_feed_rate = df_item.loc["feed_rate_class"]
@@ -76,41 +89,55 @@ class SimpleDataLoader():
         Returns:
             numpy.ndarray: The image data as a NumPy array.
         """
-        image_data = cv.imread(image_path) # reading using openCV, its same as before but one line only.
-                                           # returns RGB matrixes in np array
+        image_data = cv.imread(image_path) 
         return image_data
 
     def nozzle_coordinates(self, idx):
-        # fcn to get coordinates of nozzle from dataset for specific image and save them to preprocessor atribute
+        """
+        get coordinates of nozzle from dataset for specific image and save them to preprocessor atribute
+
+        Args:
+            idx (int): index of the image in dataset
+       
+        """
         x = self.data_frame["nozzle_tip_x"][idx]
         y = self.data_frame["nozzle_tip_y"][idx]
         self.preprocessors.coordinates = [x, y]
 
     def load_data(self, num_samples_subset, start_idx=None, end_idx=None):
+        """
+        Load a subset of the dataset. Loads a list of images and their corresponding labels.
 
-        if start_idx is not None and end_idx is not None:     #checks if a range of indices is given 
+        Args:
+            num_samples_subset (int): The number of samples to load.
+            start_idx (int): The start index of the subset.
+            end_idx (int): The end index of the subset.
+
+        Returns:
+            tuple: A tuple containing the loaded data and labels.
+        """
+        if start_idx is not None and end_idx is not None:     #checks if a range of indices is given (if not whole dataset is used)
             indices = np.arange(start_idx, end_idx)
         else:
             indices = np.arange(self.num_samples)
             np.random.shuffle(indices)
-            indices = indices[:num_samples_subset] # here we pick number of indices from shuffled indices
+            indices = indices[:num_samples_subset]
 
         data = []
         labels = []
         for idx in tqdm(indices, desc="Sample loading"):
             img_path = self.data_frame["img_path"][idx]
-            img_path = os.path.join(self.data_path, img_path) # I changed this because we need to connect the path where is the dataset and the local path in dataset
+            img_path = os.path.join(self.data_path, img_path)
             
             self.nozzle_coordinates(idx) # nozzle coordinates as [x, y] are saved to preprocesor.coordinates
             
-            # Load your data from file
             try:
                 img = self.load_image(img_path)
                 
-                if isinstance(self.preprocessors, list):  # Check if preprocessors is a list
+                if isinstance(self.preprocessors, list):
                     for p in self.preprocessors:
                         img = p.preprocess(img)
-                elif self.preprocessors is not None:  # Check if preprocessors is a single preprocessor instance
+                elif self.preprocessors is not None:
                     img = self.preprocessors.preprocess(img)
 
                 data.append(img)

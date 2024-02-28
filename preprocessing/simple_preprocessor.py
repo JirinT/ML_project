@@ -10,28 +10,62 @@ class SimplePreprocessor:
         self.coordinates = []
 		
     def resize_image(self, image):
-        # original size of images is 720x1280
-        # this fcn just change the size of the image, does not crop it 
+        """
+        changes the size of the image to the specified width and height, does not crop it
+        original size of images is 720x1280
+
+        Args:
+            image (numpy.ndarray): The image to be resized.
+
+        Returns:
+            numpy.ndarray: The resized image.
+        """
         img_resized = cv.resize(image, (self.width, self.height), interpolation=self.inter)
+
         return img_resized
     
     def crop_image_around_nozzle(self, image, crop_size=240):
-        # implement function to crop image around the nozzle based on its coordinates 
-        # returns image with dimensions crop_size x crop_size
-        x = self.coordinates[0] # x coordinate of nozzle in image
-        y = self.coordinates[1] # y coordinate of nozzle in image
-        half_crop_size = int(np.floor(crop_size/2)) # needs to be integer.
+        """
+        crop image around the nozzle based on its coordinates
+
+        Args:
+            image (numpy.ndarray): The image to be cropped.
+            crop_size (int): The size of the cropped image.
+
+        Returns:
+            numpy.ndarray: The cropped image (crop_size * crop_size).
+        """
+        x = self.coordinates[0]
+        y = self.coordinates[1]
+        half_crop_size = int(np.floor(crop_size/2))
         cropped_image = image[y-half_crop_size : y+half_crop_size, x-half_crop_size-50 : x+half_crop_size] # with -50 works better for images ive tried
     
         return cropped_image
     
     def rgb_to_grayscale(self, image):
-        # returns gray scale matrix
+        """
+        turns the image to gray scale
+
+        Args:
+            image (numpy.ndarray): The image to be turned to gray scale.
+
+        Returns:
+            numpy.ndarray: The gray scale image.
+        """
         gray_img = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
         gray_img = cv.equalizeHist(gray_img) # increasing contrast, so the printed filament is more visible - this should be changed, does not work very well so far
         return gray_img
 
     def preprocess(self, image):
+        """
+        Preprocess the image by applying a series of operations.
+
+        Args:
+            image (numpy.ndarray): The image to be preprocessed.
+
+        Returns:
+            numpy.ndarray: The preprocessed image.
+        """
         img_cropped = self.crop_image_around_nozzle(image)
         img_resized = self.resize_image(img_cropped)
         img_preprocessed = self.rgb_to_grayscale(img_resized)
