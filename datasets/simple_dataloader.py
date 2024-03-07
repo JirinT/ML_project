@@ -89,7 +89,9 @@ class SimpleDataLoader():
         Returns:
             numpy.ndarray: The image data as a NumPy array.
         """
-        image_data = cv.imread(image_path) 
+        image = Image.open(image_path)
+        image_data = np.array(image)
+
         return image_data
 
     def nozzle_coordinates(self, idx):
@@ -142,7 +144,7 @@ class SimpleDataLoader():
 
                 data.append(img)
                 labels.append(self.create_label(self.data_frame.iloc[idx]))
-            except OSError as e:
+            except Exception as e:
                 print("Error processing image:", e)
                 continue
 
