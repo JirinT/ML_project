@@ -1,0 +1,28 @@
+{
+    "general": {
+        "csv_file_name": "caxton_dataset_filtered.csv",
+        "plot_path": "./logs/plots/",
+        "log_path": "./logs/log_files/"
+    },
+    "preprocessor": {
+        "resize": {
+            "width": 30,
+            "height": 30
+        },
+        "crop_size": 240
+    },
+    "classifier": {
+        "k_value": 5,
+        "distance_metric": "euclidean"
+    },
+    "training": {
+        "num_samples_subset": 5000,
+        "start_idx": null,
+        "end_idx": null,
+        "test_size": 0.25,
+        "random_state": 42,
+        "use_cross_validation": true,
+        "num_k": 15,
+        "cv_fold": 10
+    }
+}
