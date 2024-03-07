@@ -56,7 +56,7 @@ labels_flat = labels.reshape(labels.shape[0], -1) # flatten the labels matrix to
 	) # stratify method throws error for me
 
 if config["training"]["use_cross_validation"]:
-	k_range = range(1,15) # k which will be tested, we can try to increase the number based on observartions
+	k_range = range(1,config["training"]["num_k"]) # k which will be tested, we can try to increase the number based on observartions
 	k_accuracy = [] # here the accuracies for different k will be saved
 
 	with open(os.path.join(logfile_path, "log.txt"), "w") as file:
