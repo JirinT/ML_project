@@ -1,5 +1,10 @@
+import json
+
 import cv2 as cv
 import numpy as np
+
+with open("config.json") as f:
+    config_preprocessor = json.load(f)["preprocessor"]
 
 class SimplePreprocessor:
     def __init__(self, width, height, inter=cv.INTER_AREA):
@@ -24,7 +29,7 @@ class SimplePreprocessor:
 
         return img_resized
     
-    def crop_image_around_nozzle(self, image, crop_size=240):
+    def crop_image_around_nozzle(self, image, crop_size=config_preprocessor["crop_size"]):
         """
         crop image around the nozzle based on its coordinates
 
