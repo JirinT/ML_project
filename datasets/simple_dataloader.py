@@ -8,10 +8,11 @@ import pandas as pd
 from PIL import Image
 from tqdm import tqdm
 
+config = json.load(open("config.json"))
+
 class SimpleDataLoader():
 
     def __init__(self, data_path, preprocessors=None):
-        config = json.load(open("config.json"))
         self.csv_file_name = config["general"]["csv_file_name"]
         self.data_path = data_path
 
@@ -131,10 +132,14 @@ class SimpleDataLoader():
         labels = []
         for idx in tqdm(indices, desc="Sample loading"):
             img_path = self.data_frame["img_path"][idx]
-            img_path = os.path.join(self.data_path, img_path) # Comment this line if it does not work :D
-            
+
+            if config["active_user"] in ["jiri", "leon"]:
+                img_path = os.path.join(self.data_path, img_path)
+            else:
+                img_path = os.path.join("./", img_path)
+    
             self.nozzle_coordinates(idx) # nozzle coordinates as [x, y] are saved to preprocesor.coordinates
-            
+
             try:
                 img = self.load_image(img_path)
                 
