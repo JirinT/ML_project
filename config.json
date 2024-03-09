@@ -7,8 +7,8 @@
     },
     "preprocessor": {
         "resize": {
-            "width": 360,
-            "height": 240
+            "width": 200,
+            "height": 200
         },
         "crop_size": 240
     },
@@ -17,13 +17,13 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 100,
+        "num_samples_subset": 1e5,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.25,
         "random_state": 42,
         "use_cross_validation": true,
-        "num_k": 15,
+        "num_k": 10,
         "cv_fold": 10
     },
     "data_paths":{
