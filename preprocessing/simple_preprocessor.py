@@ -41,6 +41,17 @@ class SimplePreprocessor:
     
         return cropped_image
     
+    def rgb_to_lab(self, image):
+        lab_img = cv.cvtColor(image, cv.COLOR_RGB2LAB)
+        l, a, b = cv.split(lab_img)
+        return l
+    
+    def clahe(self, image):
+        # CLAHE method (contranst limited adaptive histogram equalization):
+        clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(20,20))
+        clahe_img = clahe.apply(image)
+        return clahe_img
+    
     def rgb_to_grayscale(self, image):
         # returns gray scale matrix
         
@@ -49,7 +60,7 @@ class SimplePreprocessor:
 
         gray_img = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
         gray_img = cv.convertScaleAbs(gray_img, alpha=alpha, beta=beta)
-       
+        gray_img = cv.normalize(gray_img, None, 0, 255, norm_type=cv.NORM_MINMAX)
         return gray_img
 
     def unsharp_mask(self,image, kernel_size=(5,5), sigma=0, amount=1.0, threshold=1):
@@ -61,8 +72,7 @@ class SimplePreprocessor:
                    -removes some noise from sharpening process
 
         Parameters influence each other a lot, so only change one at a time."""
-        
-        blurred = cv.GaussianBlur(image, kernel_size, sigma)
+        blurred = cv.GaussianBlur(image, kernel_size, sigma, borderType=cv.BORDER_CONSTANT)
         sharpened = float(amount + 1) * image - float(amount) * blurred
         sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
         sharpened = np.minimum(sharpened, 255 * np.ones(sharpened.shape))
@@ -82,10 +92,13 @@ class SimplePreprocessor:
         Returns:
             numpy.ndarray: The preprocessed image.
         """
-        img_cropped = self.crop_image_around_nozzle(image)
+        img_rgb2lab = self.rgb_to_lab(image)
+        img_clahe = self.clahe(img_rgb2lab)
+        # img_gray = self.rgb_to_grayscale(image)
+        img_unsharp = self.unsharp_mask(img_clahe)
+        img_cropped = self.crop_image_around_nozzle(img_unsharp)
         img_resized = self.resize_image(img_cropped)
-        img_rgb2gray = self.rgb_to_grayscale(img_resized)
-        img_preprocessed = self.unsharp_mask(img_rgb2gray)
+        img_preprocessed = img_resized
 
         return img_preprocessed
     
