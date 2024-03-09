@@ -6,3 +6,5 @@ caxton_dataset
 *.pyc
 log.txt
 *.png
+testing.py
+*.jpg
