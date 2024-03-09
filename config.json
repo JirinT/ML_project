@@ -1,4 +1,5 @@
 {
+    "active_user": "jiri",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -6,8 +7,8 @@
     },
     "preprocessor": {
         "resize": {
-            "width": 30,
-            "height": 30
+            "width": 360,
+            "height": 240
         },
         "crop_size": 240
     },
@@ -16,13 +17,19 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 10,
+        "num_samples_subset": 100,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.25,
         "random_state": 42,
-        "use_cross_validation": false,
+        "use_cross_validation": true,
         "num_k": 15,
         "cv_fold": 10
+    },
+    "data_paths":{
+        "jan": "./caxton_dataset",
+        "leon": "test",
+        "jiri": "/Volumes/Samsung USB",
+        "remote_pc": "./caxton_dataset"
     }
 }
