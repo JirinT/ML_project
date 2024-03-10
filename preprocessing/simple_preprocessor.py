@@ -7,11 +7,11 @@ with open("config.json") as f:
     config_preprocessor = json.load(f)["preprocessor"]
 
 class SimplePreprocessor:
-    def __init__(self, width, height, inter=cv.INTER_AREA):
+    def __init__(self, width, height, inter=cv.INTER_LINEAR):
         # store the target image width, height, and interpolation method used when resizing
         self.width = width
         self.height = height
-        self.inter = cv.INTER_CUBIC
+        self.inter = inter
         self.coordinates = []
 		
     def resize_image(self, image):
