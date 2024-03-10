@@ -86,9 +86,9 @@ class SimplePreprocessor:
     def change_brightness(self, image):
         brightness = np.mean(image)
         if brightness < 30:
-            image *= 1.3
+            image = (image*1.3).astype(np.uint8)
         elif brightness > 190:
-            image *= 0.7
+            image = (image*0.7).astype(np.uint8)
         return image
 
     def preprocess(self, image):
