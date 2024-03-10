@@ -22,9 +22,11 @@ config = json.load(open("config.json"))
 data_paths = {
 	"jan": "./caxton_dataset",
 	"leon": "test",
-	"jiri": "test"
+	"jiri": "/Volumes/Samsung USB",
+	"remote_pc": "./caxton_dataset"
 }
-data_path = data_paths["jan"] # change this to your name
+
+data_path = data_paths["jiri"] # change this to your name
 
 plot_path = config["general"]["plot_path"]
 logfile_path = config["general"]["log_path"]
@@ -59,7 +61,7 @@ if show_images:
 	) # stratify method throws error for me
 
 if config["training"]["use_cross_validation"]:
-	k_range = range(1,config["training"]["num_k"]) # k which will be tested, we can try to increase the number based on observartions
+	k_range = range(1,config["training"]["num_k"]) # k which will be tested
 	k_accuracy = [] # here the accuracies for different k will be saved
 
 	current_datetime = datetime.now()
@@ -67,7 +69,7 @@ if config["training"]["use_cross_validation"]:
 	with open(os.path.join(logfile_path, f"log_{filename}.txt"), "w") as file:
 		print("Cross validation started.")
 		for k in k_range:
-			knn = KNeighborsClassifier(n_neighbors=k) # initialize the KNN with current k
+			knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"]) # initialize the KNN with current k
 
 			accuracies = cross_val_score(knn, X=trainX, y=trainY, cv=config["training"]["cv_fold"]) # returns 1D vector with the accuracies for each validation set, 
 																		# cv is the number of folds used in cross validation

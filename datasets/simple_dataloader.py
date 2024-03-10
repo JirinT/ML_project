@@ -1,4 +1,5 @@
 import os
+import json
 
 import cv2 as cv
 import numpy as np
@@ -10,7 +11,8 @@ from tqdm import tqdm
 class SimpleDataLoader():
 
     def __init__(self, data_path, preprocessors=None):
-        self.csv_file_name = "caxton_dataset_filtered.csv"
+        config = json.load(open("config.json"))
+        self.csv_file_name = config["general"]["csv_file_name"]
         self.data_path = data_path
 
         if self.csv_file_name in os.listdir(self.data_path):
@@ -129,7 +131,7 @@ class SimpleDataLoader():
         labels = []
         for idx in tqdm(indices, desc="Sample loading"):
             img_path = self.data_frame["img_path"][idx]
-            # img_path = os.path.join(self.data_path, img_path) -> file structure is not the same for me
+            img_path = os.path.join(self.data_path, img_path) # Comment this line if it does not work :D
             
             self.nozzle_coordinates(idx) # nozzle coordinates as [x, y] are saved to preprocesor.coordinates
             
