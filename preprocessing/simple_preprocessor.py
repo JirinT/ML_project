@@ -44,6 +44,7 @@ class SimplePreprocessor:
     def rgb_to_lab(self, image):
         lab_img = cv.cvtColor(image, cv.COLOR_RGB2LAB)
         l, a, b = cv.split(lab_img)
+        l = self.change_brightness(l)
         return l
     
     def clahe(self, image):
@@ -63,7 +64,7 @@ class SimplePreprocessor:
         gray_img = cv.normalize(gray_img, None, 0, 255, norm_type=cv.NORM_MINMAX)
         return gray_img
 
-    def unsharp_mask(self,image, kernel_size=(5,5), sigma=0, amount=1.5, threshold=1):
+    def unsharp_mask(self,image, kernel_size=(5,5), sigma=0.5, amount=1.5, threshold=1):
         """Return a sharpened version of the image, using an unsharp mask algorithm
         Args:
         sigma: increasing sigma will decrease the impact of the pixels nearest the pixel of interest, e.g. it makes a blurrier image.
@@ -81,6 +82,14 @@ class SimplePreprocessor:
             low_contrast_mask = np.absolute(image - blurred) < threshold
             np.copyto(sharpened, image, where=low_contrast_mask)
         return sharpened
+    
+    def change_brightness(self, image):
+        brightness = np.mean(image)
+        if brightness < 30:
+            image *= 1.3
+        elif brightness > 190:
+            image *= 0.7
+        return image
 
     def preprocess(self, image):
         """
