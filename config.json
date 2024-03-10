@@ -2,7 +2,10 @@
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
-        "log_path": "./logs/log_files/"
+        "log_path": "./logs/log_files/",
+        "sample_img_path": "./logs/sample_images/",
+        "show_sample_images": true,
+        "save_cv_plot": true
     },
     "preprocessor": {
         "resize": {
@@ -22,7 +25,7 @@
         "test_size": 0.25,
         "random_state": 42,
         "use_cross_validation": true,
-        "num_k": 15,
+        "num_k": 10,
         "cv_fold": 10
     }
 }

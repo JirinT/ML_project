@@ -6,6 +6,7 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 
+from datetime import datetime
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
@@ -43,10 +44,12 @@ data, labels = dataloader.load_data(
 imgs_flat = data.reshape(data.shape[0], -1) # flatten the image matrix to 1D vector
 labels_flat = labels.reshape(labels.shape[0], -1) # flatten the labels matrix to 1D vector
 
-# # this is just for visualisation of preprocessed images:
-# for img in data:
-# 	cv.imshow("Sample image", img)
-# 	cv.waitKey()
+show_images = config["general"]["show_sample_images"]
+if show_images:
+	for img_idx in range(len(data)):
+		if img_idx > 5:
+			break
+		cv.imwrite(os.path.join(config["general"]["sample_img_path"], f"sample_image_{img_idx}.png"), data[img_idx])
 
 (trainX, testX, trainY, testY) = train_test_split(
 	imgs_flat, 
@@ -59,7 +62,9 @@ if config["training"]["use_cross_validation"]:
 	k_range = range(1,config["training"]["num_k"]) # k which will be tested, we can try to increase the number based on observartions
 	k_accuracy = [] # here the accuracies for different k will be saved
 
-	with open(os.path.join(logfile_path, "log.txt"), "w") as file:
+	current_datetime = datetime.now()
+	filename = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
+	with open(os.path.join(logfile_path, f"log_{filename}.txt"), "w") as file:
 		print("Cross validation started.")
 		for k in k_range:
 			knn = KNeighborsClassifier(n_neighbors=k) # initialize the KNN with current k
@@ -75,7 +80,8 @@ if config["training"]["use_cross_validation"]:
 	plt.xlabel('Number of Neighbors (k)')
 	plt.ylabel('Cross-Validation Accuracy')
 	plt.title('KNN Cross-Validation Accuracy for Different k values')
-	plt.savefig(os.path.join(plot_path, "knn_cross_validation.png"))
+	if config["general"]["save_cv_plot"]:
+		plt.savefig(os.path.join(plot_path, "knn_cross_validation.png"))
 	plt.show(block=False)
 	time.sleep(5)
 	plt.close()
