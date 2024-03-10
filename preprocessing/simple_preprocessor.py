@@ -11,7 +11,7 @@ class SimplePreprocessor:
         # store the target image width, height, and interpolation method used when resizing
         self.width = width
         self.height = height
-        self.inter = inter
+        self.inter = cv.INTER_CUBIC
         self.coordinates = []
 		
     def resize_image(self, image):
@@ -63,7 +63,7 @@ class SimplePreprocessor:
         gray_img = cv.normalize(gray_img, None, 0, 255, norm_type=cv.NORM_MINMAX)
         return gray_img
 
-    def unsharp_mask(self,image, kernel_size=(5,5), sigma=0, amount=1.0, threshold=1):
+    def unsharp_mask(self,image, kernel_size=(5,5), sigma=0, amount=1.5, threshold=1):
         """Return a sharpened version of the image, using an unsharp mask algorithm
         Args:
         sigma: increasing sigma will decrease the impact of the pixels nearest the pixel of interest, e.g. it makes a blurrier image.
@@ -92,12 +92,18 @@ class SimplePreprocessor:
         Returns:
             numpy.ndarray: The preprocessed image.
         """
-        img_rgb2lab = self.rgb_to_lab(image)
+
+        # img_cropped = self.crop_image_around_nozzle(image)
+        # img_gray = self.rgb_to_grayscale(img_cropped)
+        # img_unsharp = self.unsharp_mask(img_gray)
+        # img_resized = self.resize_image(img_unsharp)
+        # img_preprocessed = img_resized
+
+        img_cropped = self.crop_image_around_nozzle(image)
+        img_rgb2lab = self.rgb_to_lab(img_cropped)
         img_clahe = self.clahe(img_rgb2lab)
-        # img_gray = self.rgb_to_grayscale(image)
         img_unsharp = self.unsharp_mask(img_clahe)
-        img_cropped = self.crop_image_around_nozzle(img_unsharp)
-        img_resized = self.resize_image(img_cropped)
+        img_resized = self.resize_image(img_unsharp)
         img_preprocessed = img_resized
 
         return img_preprocessed
