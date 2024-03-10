@@ -17,12 +17,12 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 100000,
+        "num_samples_subset": 10,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.25,
         "random_state": 42,
-        "use_cross_validation": true,
+        "use_cross_validation": false,
         "num_k": 10,
         "cv_fold": 10
     },
