@@ -1,9 +1,0 @@
-K-value 1: Accuracy = 0.06161354723707665
-K-value 2: Accuracy = 0.0026666666666666666
-K-value 3: Accuracy = 0.022940463458110516
-K-value 4: Accuracy = 0.003468092691622103
-K-value 5: Accuracy = 0.011204278074866311
-K-value 6: Accuracy = 0.0024007130124777186
-K-value 7: Accuracy = 0.010135472370766488
-K-value 8: Accuracy = 0.0026680926916221033
-K-value 9: Accuracy = 0.007736898395721925

@@ -18,6 +18,18 @@ from datasets.simple_dataloader import SimpleDataLoader
 
 config = json.load(open("config.json"))
 
+now = datetime.now()
+now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
+log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
+os.makedirs(log_folder_training, exist_ok=True)
+plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
+os.makedirs(plot_folder_training, exist_ok=True)
+
+# Save the config to a text file
+filename_config = os.path.join(log_folder_training, "config.txt")
+with open(filename_config, 'w') as f:
+    json.dump(config, f)
+
 # add your data_paths here
 data_paths = {
 	"jan": "./caxton_dataset",
@@ -26,10 +38,7 @@ data_paths = {
 	"remote_pc": "./caxton_dataset"
 }
 
-data_path = data_paths["jiri"] # change this to your name
-
-plot_path = config["general"]["plot_path"]
-logfile_path = config["general"]["log_path"]
+data_path = data_paths["jan"] # change this to your name
 
 simple_preprocessor = SimplePreprocessor(
 	width=config["preprocessor"]["resize"]["width"], 
@@ -64,9 +73,7 @@ if config["training"]["use_cross_validation"]:
 	k_range = range(1,config["training"]["num_k"]) # k which will be tested
 	k_accuracy = [] # here the accuracies for different k will be saved
 
-	current_datetime = datetime.now()
-	filename = current_datetime.strftime("%Y-%m-%d_%H-%M-%S")
-	with open(os.path.join(logfile_path, f"log_{filename}.txt"), "w") as file:
+	with open(os.path.join(log_folder_training, "log.txt"), "w") as file:
 		print("Cross validation started.")
 		for k in k_range:
 			knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"]) # initialize the KNN with current k
@@ -83,7 +90,7 @@ if config["training"]["use_cross_validation"]:
 	plt.ylabel('Cross-Validation Accuracy')
 	plt.title('KNN Cross-Validation Accuracy for Different k values')
 	if config["general"]["save_cv_plot"]:
-		plt.savefig(os.path.join(plot_path, "knn_cross_validation.png"))
+		plt.savefig(os.path.join(plot_folder_training, "knn_cross_validation.png"))
 	plt.show(block=False)
 	time.sleep(5)
 	plt.close()
