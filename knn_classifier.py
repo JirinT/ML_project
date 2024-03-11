@@ -18,7 +18,7 @@ from datasets.simple_dataloader import SimpleDataLoader
 config = json.load(open("config.json"))
 
 user = config["active_user"] # Change your name in config file (jan, leon, jiri, remote_pc)
-data_path = config["data_paths"][user]
+data_path = config["general"]["data_paths"][user]
 plot_path = config["general"]["plot_path"]
 logfile_path = config["general"]["log_path"]
 
@@ -37,12 +37,12 @@ data, labels = dataloader.load_data(
 imgs_flat = data.reshape(data.shape[0], -1) # flatten the image matrix to 1D vector
 labels_flat = labels.reshape(labels.shape[0], -1) # flatten the labels matrix to 1D vector
 
-# # this is just for visualisation of preprocessed images:
-# for img in data:
-# 	plt.imshow(img, cmap="gray")
-# 	plt.title("Processed image")
-# 	plt.show()
-# 	plt.connect('key_press_event', lambda event: plt.close())
+# this is just for visualisation of preprocessed images:
+for img in data:
+	plt.imshow(img, cmap="gray")
+	plt.title("Processed image")
+	plt.show()
+	plt.connect('key_press_event', lambda event: plt.close())
 
 (trainX, testX, trainY, testY) = train_test_split(
 	imgs_flat, 

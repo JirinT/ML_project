@@ -40,5 +40,5 @@
         "use_cross_validation": false,
         "num_k": 10,
         "cv_fold": 10
-    },
+    }
 }
