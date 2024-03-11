@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "remote_pc",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -17,14 +17,14 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 10,
+        "num_samples_subset": 200000,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.25,
         "random_state": 42,
-        "use_cross_validation": false,
-        "num_k": 10,
-        "cv_fold": 10
+        "use_cross_validation": true,
+        "num_k": 4,
+        "cv_fold": 5
     },
     "data_paths":{
         "jan": "./caxton_dataset",
