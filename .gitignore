@@ -4,7 +4,7 @@ ml_env
 caxton_dataset
 *.icloud
 *.pyc
-log.txt
+logs/*
 *.png
 testing.py
 *.jpg
