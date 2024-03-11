@@ -82,7 +82,8 @@ if config["training"]["use_cross_validation"]:
 	plt.plot(k_range, k_accuracy, c="b")
 	plt.scatter(k_range,k_accuracy, marker=".", c="b", s=100)
 	plt.xlabel('Number of Neighbors (k)')
-	plt.ylabel('Cross-Validation Accuracy')plt.grid(True)
+	plt.ylabel('Cross-Validation Accuracy')
+	plt.grid(True)
 	plt.title('KNN Cross-Validation Accuracy for Different k values')
 
 	if config["general"]["save_cv_plot"]:
