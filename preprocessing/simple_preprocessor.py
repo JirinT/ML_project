@@ -7,7 +7,7 @@ with open("config.json") as f:
     config_preprocessor = json.load(f)["preprocessor"]
 
 class SimplePreprocessor:
-    def __init__(self, width, height, inter=cv.INTER_AREA):
+    def __init__(self, width, height, inter=cv.INTER_LINEAR):
         # store the target image width, height, and interpolation method used when resizing
         self.width = width
         self.height = height
@@ -41,6 +41,18 @@ class SimplePreprocessor:
     
         return cropped_image
     
+    def rgb_to_lab(self, image):
+        lab_img = cv.cvtColor(image, cv.COLOR_RGB2LAB)
+        l, a, b = cv.split(lab_img)
+        l = self.change_brightness(l)
+        return l
+    
+    def clahe(self, image):
+        # CLAHE method (contranst limited adaptive histogram equalization):
+        clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(20,20))
+        clahe_img = clahe.apply(image)
+        return clahe_img
+    
     def rgb_to_grayscale(self, image):
         # returns gray scale matrix
         
@@ -49,10 +61,10 @@ class SimplePreprocessor:
 
         gray_img = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
         gray_img = cv.convertScaleAbs(gray_img, alpha=alpha, beta=beta)
-       
+        gray_img = cv.normalize(gray_img, None, 0, 255, norm_type=cv.NORM_MINMAX)
         return gray_img
 
-    def unsharp_mask(self,image, kernel_size=(5,5), sigma=0, amount=1.0, threshold=1):
+    def unsharp_mask(self,image, kernel_size=(5,5), sigma=0.5, amount=1.5, threshold=1):
         """Return a sharpened version of the image, using an unsharp mask algorithm
         Args:
         sigma: increasing sigma will decrease the impact of the pixels nearest the pixel of interest, e.g. it makes a blurrier image.
@@ -61,8 +73,7 @@ class SimplePreprocessor:
                    -removes some noise from sharpening process
 
         Parameters influence each other a lot, so only change one at a time."""
-        
-        blurred = cv.GaussianBlur(image, kernel_size, sigma)
+        blurred = cv.GaussianBlur(image, kernel_size, sigma, borderType=cv.BORDER_CONSTANT)
         sharpened = float(amount + 1) * image - float(amount) * blurred
         sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
         sharpened = np.minimum(sharpened, 255 * np.ones(sharpened.shape))
@@ -71,6 +82,14 @@ class SimplePreprocessor:
             low_contrast_mask = np.absolute(image - blurred) < threshold
             np.copyto(sharpened, image, where=low_contrast_mask)
         return sharpened
+    
+    def change_brightness(self, image):
+        brightness = np.mean(image)
+        if brightness < 30:
+            image = (image*1.3).astype(np.uint8)
+        elif brightness > 190:
+            image = (image*0.7).astype(np.uint8)
+        return image
 
     def preprocess(self, image):
         """
@@ -82,10 +101,18 @@ class SimplePreprocessor:
         Returns:
             numpy.ndarray: The preprocessed image.
         """
-        img_cropped = self.crop_image_around_nozzle(image)
-        img_resized = self.resize_image(img_cropped)
-        img_rgb2gray = self.rgb_to_grayscale(img_resized)
-        img_preprocessed = self.unsharp_mask(img_rgb2gray)
-
-        return img_preprocessed
+        if config_preprocessor["crop"]:
+            image = self.crop_image_around_nozzle(image)
+        if config_preprocessor["rgb2lab"]:
+            image = self.rgb_to_lab(image)
+        if config_preprocessor["rgb2gray"]:
+            image = self.rgb_to_grayscale(image)
+        if config_preprocessor["clahe"]:
+            image = self.clahe(image)
+        if config_preprocessor["unsharp"]:
+            image = self.unsharp_mask(image)
+        if config_preprocessor["resize"]:
+            image = self.resize_image(image)
+            
+        return image
     

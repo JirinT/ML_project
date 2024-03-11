@@ -30,15 +30,8 @@ filename_config = os.path.join(log_folder_training, "config.txt")
 with open(filename_config, 'w') as f:
     json.dump(config, f)
 
-# add your data_paths here
-data_paths = {
-	"jan": "./caxton_dataset",
-	"leon": "test",
-	"jiri": "/Volumes/Samsung USB",
-	"remote_pc": "./caxton_dataset"
-}
-
-data_path = data_paths["jan"] # change this to your name
+user = config["active_user"] # Change your name in config file (jan, leon, jiri, remote_pc)
+data_path = config["general"]["data_paths"][user]
 
 simple_preprocessor = SimplePreprocessor(
 	width=config["preprocessor"]["resize"]["width"], 
@@ -76,6 +69,7 @@ if config["training"]["use_cross_validation"]:
 	with open(os.path.join(log_folder_training, "log.txt"), "w") as file:
 		print("Cross validation started.")
 		for k in k_range:
+			print(f"Now running for k = {k}")
 			knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"]) # initialize the KNN with current k
 
 			accuracies = cross_val_score(knn, X=trainX, y=trainY, cv=config["training"]["cv_fold"]) # returns 1D vector with the accuracies for each validation set, 
@@ -85,10 +79,12 @@ if config["training"]["use_cross_validation"]:
 	print("End of cross validation.")
 
 	plt.figure("KNN cross validation")
-	plt.plot(k_range, k_accuracy)
+	plt.plot(k_range, k_accuracy, c="b")
+	plt.scatter(k_range,k_accuracy, marker=".", c="b", s=100)
 	plt.xlabel('Number of Neighbors (k)')
-	plt.ylabel('Cross-Validation Accuracy')
+	plt.ylabel('Cross-Validation Accuracy')plt.grid(True)
 	plt.title('KNN Cross-Validation Accuracy for Different k values')
+
 	if config["general"]["save_cv_plot"]:
 		plt.savefig(os.path.join(plot_folder_training, "knn_cross_validation.png"))
 	plt.show(block=False)
