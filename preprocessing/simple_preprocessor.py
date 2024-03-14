@@ -101,17 +101,17 @@ class SimplePreprocessor:
         Returns:
             numpy.ndarray: The preprocessed image.
         """
-        if config_preprocessor["crop"]:
+        if config_preprocessor["setting"]["crop"]:
             image = self.crop_image_around_nozzle(image)
-        if config_preprocessor["rgb2lab"]:
+        if config_preprocessor["setting"]["rgb2lab"]:
             image = self.rgb_to_lab(image)
-        if config_preprocessor["rgb2gray"]:
+        if config_preprocessor["setting"]["rgb2gray"]:
             image = self.rgb_to_grayscale(image)
-        if config_preprocessor["clahe"]:
+        if config_preprocessor["setting"]["clahe"]:
             image = self.clahe(image)
-        if config_preprocessor["unsharp"]:
+        if config_preprocessor["setting"]["unsharp"]:
             image = self.unsharp_mask(image)
-        if config_preprocessor["resize"]:
+        if config_preprocessor["setting"]["resize"]:
             image = self.resize_image(image)
             
         return image
