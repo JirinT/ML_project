@@ -22,12 +22,12 @@
         },
         "crop_size": 240,
         "setting": {
-            "crop": 1,
-            "resize": 1,
-            "rgb2gray": 0,
-            "rgb2lab": 1,
-            "clahe": 1,
-            "unsharp": 1
+            "crop": true,
+            "resize": true,
+            "rgb2gray": false,
+            "rgb2lab": true,
+            "clahe": true,
+            "unsharp": true
                 }
     },
     "classifier": {
