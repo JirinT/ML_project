@@ -7,7 +7,10 @@
         "sample_img_path": "./logs/sample_images/",
         "show_sample_images": true,
         "save_cv_plot": true,
-
+        "classified_images_path":{
+            "correct": "./logs/classified_images/correct",
+            "incorrect": "./logs/classified_images/incorrect"
+        },
         "data_paths":{
             "jan": "./caxton_dataset",
             "leon": "test",
@@ -35,7 +38,7 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 10,
+        "num_samples_subset": 7,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.25,
