@@ -11,7 +11,7 @@ from datetime import datetime
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 from tqdm import tqdm
 
 from preprocessing.simple_preprocessor import SimplePreprocessor
@@ -106,13 +106,16 @@ else:
 	knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
 	knn.fit(trainX, trainY)
 
-predicted_labels = knn.predict(testX)
+test_accuracy = knn.score(testX, testY)
+print("Test Accuracy: {:.2f}%".format(test_accuracy * 100))
 
 correct_classification = np.zeros(shape=(testX.shape[1],)) # here the correctly classified images will be stored
 incorrect_classification = np.zeros(shape=(testX.shape[1],)) # here the incorrectly classified images will be stored
 
+y_predicted = knn.predict(testX)
+
 for i in range(testY.shape[0]):
-	comparison = np.array_equal(testY[i], predicted_labels[i])
+	comparison = np.array_equal(testY[i], y_predicted[i])
 	if comparison == True:
 		correct_classification = np.hstack((correct_classification,testX[i]))
 	else:
@@ -137,8 +140,57 @@ folder_functions.delete_files(incorrect_class_path)
 folder_functions.save_images(correct_class_path, correct_classification)
 folder_functions.save_images(incorrect_class_path, incorrect_classification)
 
-# Confusion matrix:
-# conf_matrix = confusion_matrix(testY, predicted_labels) # this gives an error, needs preproces testY and predicted_labels
+# decode predicted labels:
+def decode(labels):
+	flow_rate = np.zeros((3,))
+	lateral_speed = np.zeros((3,))
+	z_offset = np.zeros((3,))
+	hotend_temperature = np.zeros((3,))
 
-test_accuracy = knn.score(testX, testY)
-print("Test Accuracy: {:.2f}%".format(test_accuracy * 100))
+	for i in range(labels.shape[0]):
+		flow_rate = np.vstack((flow_rate,labels[i][:3]))
+		lateral_speed = np.vstack((lateral_speed,labels[i][3:6]))
+		z_offset = np.vstack((z_offset,labels[i][6:9]))
+		hotend_temperature = np.vstack((hotend_temperature,labels[i][9:]))
+
+	flow_rate_decoded = np.argmax(flow_rate, axis=1) + 1
+	lateral_speed_decoded = np.argmax(lateral_speed, axis=1) + 1
+	z_offset_decoded = np.argmax(z_offset, axis=1) + 1
+	hotend_temperature_decoded = np.argmax(hotend_temperature, axis=1) + 1
+
+	return flow_rate_decoded, lateral_speed_decoded, z_offset_decoded, hotend_temperature_decoded
+	
+flow_rate_test_decoded, lateral_speed_test_decoded, z_offset_test_decoded, hotend_temperature_test_decoded = decode(testY)
+flow_rate_predicted_decoded, lateral_speed_predicted_decoded, z_offset_predicted_decoded, hotend_temperature_predicted_decoded = decode(y_predicted)
+
+# print(flow_rate_predicted_decoded.min())
+# print(lateral_speed_predicted_decoded.min())
+# print(z_offset_predicted_decoded.min())
+# print(hotend_temperature_predicted_decoded.min())
+
+# Plot confusion matrix
+fig, axs = plt.subplots(2,2,figsize=(8, 5))
+cmp1 = ConfusionMatrixDisplay(confusion_matrix(flow_rate_test_decoded, flow_rate_predicted_decoded),
+							display_labels=["Low", "Good", "High"])
+cmp1.plot(ax=axs[0, 0])
+axs[0, 0].set_title('Flow Rate')
+
+cmp2 = ConfusionMatrixDisplay(confusion_matrix(lateral_speed_test_decoded, lateral_speed_predicted_decoded),
+							display_labels=["Low", "Good", "High"])
+cmp2.plot(ax=axs[0, 1])
+axs[0, 1].set_title('Lateral Speed')
+
+cmp3 = ConfusionMatrixDisplay(confusion_matrix(z_offset_test_decoded, z_offset_predicted_decoded),
+							display_labels=["Low", "Good", "High"])
+cmp3.plot(ax=axs[1, 0])
+axs[1, 0].set_title('Z offset')
+
+cmp4 = ConfusionMatrixDisplay(confusion_matrix(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded),
+							display_labels=["Low", "Good", "High"])
+cmp4.plot(ax=axs[1, 1])
+axs[1, 1].set_title('Hotend Temperature')
+plt.tight_layout()
+plt.show()
+
+# Confusion matrix:
+# conf_matrix = confusion_matrix(testY, y_predicted) # this gives an error, needs preproces testY and predicted_labels
