@@ -38,7 +38,7 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 7,
+        "num_samples_subset": 20,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.25,
