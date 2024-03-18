@@ -106,9 +106,6 @@ else:
 	knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
 	knn.fit(trainX, trainY)
 
-test_accuracy = knn.score(testX, testY)
-print("\nTest Accuracy: {:.2f}%".format(test_accuracy * 100))
-
 correct_classification = np.zeros(shape=(testX.shape[1],)) # here the correctly classified images will be stored
 incorrect_classification = np.zeros(shape=(testX.shape[1],)) # here the incorrectly classified images will be stored
 
@@ -199,8 +196,14 @@ flow_rate_acc = accuracy_score(flow_rate_test_decoded, flow_rate_predicted_decod
 lateral_speed_acc = accuracy_score(lateral_speed_test_decoded, lateral_speed_predicted_decoded)
 z_offset_acc = accuracy_score(z_offset_test_decoded, z_offset_predicted_decoded)
 hotend_temperature_acc = accuracy_score(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded)
+test_accuracy = knn.score(testX, testY)
 
-print(f"\nFlow rate accuracy: {round(flow_rate_acc * 100, 2)} %\n\
-Lateral speed accuracy: {round(lateral_speed_acc * 100, 2)} %\n\
-Z offset accuracy: {round(z_offset_acc * 100, 2)} %\n\
-Hot end temperature accuracy: {round(hotend_temperature_acc * 100, 2)} %")
+# file = open(os.path.join(log_folder_training, "log.txt"), "w")
+with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
+	file.write(f"\nFlow rate accuracy: {round(flow_rate_acc * 100, 2)} %\n"
+            f"Lateral speed accuracy: {round(lateral_speed_acc * 100, 2)} %\n"
+            f"Z offset accuracy: {round(z_offset_acc * 100, 2)} %\n"
+            f"Hot end temperature accuracy: {round(hotend_temperature_acc * 100, 2)} %\n")
+	file.write("\nTest Accuracy: {:.2f}%".format(test_accuracy * 100))
+
+print("Accuracy saved to log files.")
