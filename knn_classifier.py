@@ -198,7 +198,6 @@ z_offset_acc = accuracy_score(z_offset_test_decoded, z_offset_predicted_decoded)
 hotend_temperature_acc = accuracy_score(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded)
 test_accuracy = knn.score(testX, testY)
 
-# file = open(os.path.join(log_folder_training, "log.txt"), "w")
 with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 	file.write(f"\nFlow rate accuracy: {round(flow_rate_acc * 100, 2)} %\n"
             f"Lateral speed accuracy: {round(lateral_speed_acc * 100, 2)} %\n"
