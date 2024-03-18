@@ -11,7 +11,7 @@ from datetime import datetime
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, accuracy_score
 from tqdm import tqdm
 
 from preprocessing.simple_preprocessor import SimplePreprocessor
@@ -107,7 +107,7 @@ else:
 	knn.fit(trainX, trainY)
 
 test_accuracy = knn.score(testX, testY)
-print("Test Accuracy: {:.2f}%".format(test_accuracy * 100))
+print("\nTest Accuracy: {:.2f}%".format(test_accuracy * 100))
 
 correct_classification = np.zeros(shape=(testX.shape[1],)) # here the correctly classified images will be stored
 incorrect_classification = np.zeros(shape=(testX.shape[1],)) # here the incorrectly classified images will be stored
@@ -163,11 +163,6 @@ def decode(labels):
 flow_rate_test_decoded, lateral_speed_test_decoded, z_offset_test_decoded, hotend_temperature_test_decoded = decode(testY)
 flow_rate_predicted_decoded, lateral_speed_predicted_decoded, z_offset_predicted_decoded, hotend_temperature_predicted_decoded = decode(y_predicted)
 
-# print(flow_rate_predicted_decoded.min())
-# print(lateral_speed_predicted_decoded.min())
-# print(z_offset_predicted_decoded.min())
-# print(hotend_temperature_predicted_decoded.min())
-
 # Plot confusion matrix
 fig, axs = plt.subplots(2,2,figsize=(8, 5))
 cmp1 = ConfusionMatrixDisplay(confusion_matrix(flow_rate_test_decoded, flow_rate_predicted_decoded),
@@ -200,5 +195,12 @@ filename = f'confusion_matrices_{timestamp}.png'
 
 plt.savefig(os.path.join(conf_matrix_path, filename))
 
-# Confusion matrix:
-# conf_matrix = confusion_matrix(testY, y_predicted) # this gives an error, needs preproces testY and predicted_labels
+flow_rate_acc = accuracy_score(flow_rate_test_decoded, flow_rate_predicted_decoded)
+lateral_speed_acc = accuracy_score(lateral_speed_test_decoded, lateral_speed_predicted_decoded)
+z_offset_acc = accuracy_score(z_offset_test_decoded, z_offset_predicted_decoded)
+hotend_temperature_acc = accuracy_score(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded)
+
+print(f"\nFlow rate accuracy: {round(flow_rate_acc * 100, 2)} %\n\
+Lateral speed accuracy: {round(lateral_speed_acc * 100, 2)} %\n\
+Z offset accuracy: {round(z_offset_acc * 100, 2)} %\n\
+Hot end temperature accuracy: {round(hotend_temperature_acc * 100, 2)} %")
