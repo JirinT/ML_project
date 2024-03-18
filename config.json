@@ -5,18 +5,19 @@
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
         "sample_img_path": "./logs/sample_images/",
-        "show_sample_images": true,
-        "save_cv_plot": true,
         "classified_images_path":{
             "correct": "./logs/classified_images/correct",
             "incorrect": "./logs/classified_images/incorrect"
         },
+        "conf_matrix_path": "./logs/confusion_matrix",
         "data_paths":{
             "jan": "./caxton_dataset",
             "leon": "test",
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
-        }
+        },
+        "show_sample_images": true,
+        "save_cv_plot": true
     },
     "preprocessor": {
         "resize": {
@@ -38,7 +39,7 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 20,
+        "num_samples_subset": 100,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.25,
