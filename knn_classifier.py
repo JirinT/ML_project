@@ -63,10 +63,10 @@ if show_images:
 	random_state=config["training"]["random_state"]
 	) # stratify method throws error for me
 
-scaler = MinMaxScaler()
-
-trainX = scaler.fit_transform(trainX)
-testX = scaler.transform(testX)
+if config["training"]["use_normalization"]:
+	scaler = MinMaxScaler()
+	trainX = scaler.fit_transform(trainX)
+	testX = scaler.transform(testX)
 
 if config["training"]["use_cross_validation"]:
 	k_range = range(1,config["training"]["num_k"]) # k which will be tested
