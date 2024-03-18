@@ -10,6 +10,7 @@ from datetime import datetime
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import MinMaxScaler
 from tqdm import tqdm
 
 from preprocessing.simple_preprocessor import SimplePreprocessor
@@ -61,6 +62,11 @@ if show_images:
 	test_size=config["training"]["test_size"], 
 	random_state=config["training"]["random_state"]
 	) # stratify method throws error for me
+
+scaler = MinMaxScaler()
+
+trainX = scaler.fit_transform(trainX)
+testX = scaler.transform(testX)
 
 if config["training"]["use_cross_validation"]:
 	k_range = range(1,config["training"]["num_k"]) # k which will be tested

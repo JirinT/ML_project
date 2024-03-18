@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "jan",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -31,14 +31,14 @@
                 }
     },
     "classifier": {
-        "k_value": 5,
+        "k_value": 1,
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 10,
+        "num_samples_subset": 1000,
         "start_idx": null,
         "end_idx": null,
-        "test_size": 0.25,
+        "test_size": 0.1,
         "random_state": 42,
         "use_cross_validation": false,
         "num_k": 10,
