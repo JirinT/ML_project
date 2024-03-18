@@ -14,7 +14,7 @@ def delete_files(path):
 def save_images(path, images):
     i = 0
     for image in images[1:]:
-        if i < 100: # 100 stands for how many images do we want to save
+        if i < 10: # 100 stands for how many images do we want to save
             filename = f"sample_{i}.png"
             filepath = os.path.join(path, filename)
             plt.imsave(filepath, image, cmap='gray')
