@@ -16,7 +16,7 @@
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
         },
-        "show_sample_images": true,
+        "show_sample_images": false,
         "save_cv_plot": true
     },
     "preprocessor": {
@@ -35,7 +35,7 @@
                 }
     },
     "classifier": {
-        "k_value": 5,
+        "k_value": 1,
         "distance_metric": "euclidean"
     },
     "training": {
