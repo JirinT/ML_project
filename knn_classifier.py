@@ -190,7 +190,15 @@ cmp4 = ConfusionMatrixDisplay(confusion_matrix(hotend_temperature_test_decoded, 
 cmp4.plot(ax=axs[1, 1])
 axs[1, 1].set_title('Hotend Temperature')
 plt.tight_layout()
-plt.show()
+
+conf_matrix_path = config["general"]["conf_matrix_path"]
+folder_functions.create_folder(conf_matrix_path)
+
+timestamp = datetime.now()
+timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+filename = f'confusion_matrices_{timestamp}.png'
+
+plt.savefig(os.path.join(conf_matrix_path, filename))
 
 # Confusion matrix:
 # conf_matrix = confusion_matrix(testY, y_predicted) # this gives an error, needs preproces testY and predicted_labels
