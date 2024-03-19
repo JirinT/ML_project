@@ -3,6 +3,7 @@ import os
 import time
 
 import numpy as np
+import pandas as pd
 import cv2 as cv
 import matplotlib.pyplot as plt
 import folder_functions
@@ -39,12 +40,12 @@ def decode_labels(labels):
 	return flow_rate_decoded, lateral_speed_decoded, z_offset_decoded, hotend_temperature_decoded
 
 
-def apply_grid_search(knn, trainX, trainY, config):
+def apply_grid_search_cv(knn, trainX, trainY, config):
 	
 	print("Starting grid search...")
 
 	param_grid = {
-		'n_neighbors': range(1, config["training"]["num_k"]),
+		'n_neighbors': range(1, config["training"]["num_k"]+1),
 		'metric': ['euclidean', 'manhattan', 'chebyshev']
 	}
 
@@ -56,6 +57,46 @@ def apply_grid_search(knn, trainX, trainY, config):
 	print("Best Score:", grid_search.best_score_)
 
 	return grid_search
+
+
+def apply_own_grid_search(trainX, trainY, valX, valY, config):
+
+	print("Starting grid search...")
+
+	param_grid = {
+		'n_neighbors': range(1, config["training"]["num_k"]+1),
+		'metric': ['euclidean', 'manhattan', 'chebyshev']
+	}
+
+	best_accuracy = 0
+	best_params = {}
+
+	accuracy_table = {'Metric': [], 'k': [], 'Accuracy': []}
+
+	for k in param_grid["n_neighbors"]:
+		for metric in param_grid["metric"]:
+			knn = KNeighborsClassifier(n_neighbors=k, metric=metric)
+			knn.fit(trainX, trainY)
+			
+			validation_accuracy = knn.score(valX, valY)
+
+			accuracy_table['Metric'].append(metric)
+			accuracy_table['k'].append(k)
+			accuracy_table['Accuracy'].append(validation_accuracy)
+			
+			if validation_accuracy > best_accuracy:
+				best_accuracy = validation_accuracy
+				best_params = {'n_neighbors': k, 'metric': metric}
+
+	accuracy_df = pd.DataFrame(accuracy_table)
+
+	accuracy_df.to_csv(os.path.join(log_folder_training, "grid_search.csv"), sep='\t', index=False)
+
+	print("Best Parameters:", best_params)
+	print("Best Score:", best_accuracy)
+
+	return best_params
+
 
 config = json.load(open("config.json"))
 
@@ -105,6 +146,13 @@ if show_images:
 	random_state=config["training"]["random_state"]
 	)
 
+(trainX, valX, trainY, valY) = train_test_split(
+	trainX, 
+	trainY, 
+	test_size=config["training"]["test_size"], 
+	random_state=config["training"]["random_state"]
+	)
+
 if config["training"]["use_normalization"]:
 	scaler = MinMaxScaler()
 	trainX = scaler.fit_transform(trainX)
@@ -146,9 +194,8 @@ if config["training"]["use_cross_validation"]:
 	knn = KNeighborsClassifier(n_neighbors=best_k, metric=config["classifier"]["distance_metric"])
 	knn.fit(trainX, trainY)
 elif config["training"]["use_grid_search"]:
-	knn = KNeighborsClassifier()
-	grid_search_result = apply_grid_search(knn, trainX, trainY, config)
-	knn = grid_search_result.best_estimator_
+	best_params = apply_own_grid_search(trainX, trainY, valX, valY, config)
+	knn = KNeighborsClassifier(n_neighbors=best_params["n_neighbors"], metric=best_params["metric"])
 	knn.fit(trainX, trainY)
 else:
 	k = config["classifier"]["k_value"]
