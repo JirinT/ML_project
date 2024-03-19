@@ -36,7 +36,6 @@
     },
     "classifier": {
         "k_value": 1,
-        "k_value": 1,
         "distance_metric": "euclidean"
     },
     "training": {
