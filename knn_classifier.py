@@ -127,21 +127,22 @@ for i in range(testY.shape[0]):
 correct_classification = correct_classification.reshape(-1, config["preprocessor"]["resize"]["height"], config["preprocessor"]["resize"]["width"])
 incorrect_classification = incorrect_classification.reshape(-1, config["preprocessor"]["resize"]["height"], config["preprocessor"]["resize"]["width"])
 
-# Save the paths for saving images:
-correct_class_path = config["general"]["classified_images_path"]["correct"]
-incorrect_class_path = config["general"]["classified_images_path"]["incorrect"]
+if config["general"]["save_classified_images"]:
+	# Save the paths for saving images:
+	correct_class_path = config["general"]["classified_images_path"]["correct"]
+	incorrect_class_path = config["general"]["classified_images_path"]["incorrect"]
 
-# create the folders if they dont exist yet:
-folder_functions.create_folder(correct_class_path)
-folder_functions.create_folder(incorrect_class_path)
+	# create the folders if they dont exist yet:
+	folder_functions.create_folder(correct_class_path)
+	folder_functions.create_folder(incorrect_class_path)
 
-# Delete the current files in the folders:
-folder_functions.delete_files(correct_class_path)
-folder_functions.delete_files(incorrect_class_path)
+	# Delete the current files in the folders:
+	folder_functions.delete_files(correct_class_path)
+	folder_functions.delete_files(incorrect_class_path)
 
-# Save the images:
-folder_functions.save_images(correct_class_path, correct_classification)
-folder_functions.save_images(incorrect_class_path, incorrect_classification)
+	# Save the images:
+	folder_functions.save_images(correct_class_path, correct_classification)
+	folder_functions.save_images(incorrect_class_path, incorrect_classification)
 
 # decode predicted labels:
 def decode(labels):
