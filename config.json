@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "remote_pc",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
