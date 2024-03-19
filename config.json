@@ -30,9 +30,9 @@
             "crop": true,
             "resize": true,
             "rgb2gray": false,
-            "rgb2lab": true,
-            "clahe": true,
-            "unsharp": true
+            "rgb2lab": false,
+            "clahe": false,
+            "unsharp": false
                 }
     },
     "classifier": {
