@@ -227,8 +227,75 @@ def log_confusion_matrix(testY, y_predicted, config):
 
 	print("Accuracy saved to log files.")
 
+def histograms(labels, config):
+	# HISTOGRAM for every combination of labels
+	# Convert each vector to a tuple and then to a string
+	label_strings = [''.join(map(str, v.ravel())) for v in labels]
+	# Get unique labels and their counts
+	unique_labels, counts = np.unique(label_strings, return_counts=True)
+
+	# Create the histogram
+	plt.figure("Histogram of Unique Labels", figsize=(10, 5))
+	plt.bar(range(len(unique_labels)), counts)
+	plt.xlabel("Unique Labels")
+	plt.ylabel("Amount of samples")
+	plt.title('Histogram of Unique Labels')
+
+	# save the histogram with timestamp:
+	folder_functions.create_folder(config["general"]["histogram_path"])
+	timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+	plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_all_labels_{timestamp}.png"))
+
+	# HISTOGRAM for every label
+	flow_rate_labels = labels[:, 0:3]
+	lateral_speed_labels = labels[:, 3:6]
+	z_offset_labels = labels[:, 6:9]
+	hotend_temperature_labels = labels[:, 9:]
+
+	unique_flow_rate, counts_flow_rate = np.unique(flow_rate_labels, return_counts=True, axis=0)
+	unique_lateral_speed, counts_lateral_speed = np.unique(lateral_speed_labels, return_counts=True, axis=0)
+	unique_z_offset, counts_z_offset = np.unique(z_offset_labels, return_counts=True, axis=0)
+	unique_hotend_temperature, counts_hotend_temperature = np.unique(hotend_temperature_labels, return_counts=True, axis=0)
+
+	plt.figure("Histograms for each label", figsize=(8, 8))
+	plt.subplot(2, 2, 1)
+	plt.bar(range(len(unique_flow_rate)), counts_flow_rate)
+	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.ylabel("Amount of samples")
+	plt.title("Flow Rate")
+
+	plt.subplot(2, 2, 2)
+	plt.bar(range(len(unique_lateral_speed)), counts_lateral_speed)
+	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.ylabel("Amount of samples")
+	plt.title("Lateral Speed")
+
+	plt.subplot(2, 2, 3)
+	plt.bar(range(len(unique_z_offset)), counts_z_offset)
+	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.ylabel("Amount of samples")
+	plt.title("Z Offset")
+
+	plt.subplot(2, 2, 4)
+	plt.bar(range(len(unique_hotend_temperature)), counts_hotend_temperature)
+	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.ylabel("Amount of samples")
+	plt.title("Hotend Temperature")
+
+	timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+	plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{timestamp}.png"))
+
 
 config = json.load(open("config.json"))
+# Clear folders in the logs folder
+if config["active_user"] != "remote_pc":
+	folder_functions.delete_all_in_folder(config["general"]["histogram_path"])
+	folder_functions.delete_all_in_folder(config["general"]["log_path"])
+	folder_functions.delete_all_in_folder(config["general"]["plot_path"])
+	folder_functions.delete_all_in_folder(config["general"]["sample_img_path"])
+	folder_functions.delete_all_in_folder(config["general"]["classified_images_path"]["correct"])
+	folder_functions.delete_all_in_folder(config["general"]["classified_images_path"]["incorrect"])
+	folder_functions.delete_all_in_folder(config["general"]["conf_matrix_path"])
 
 now = datetime.now()
 now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -242,24 +309,31 @@ filename_config = os.path.join(log_folder_training, "config.txt")
 with open(filename_config, 'w') as f:
     json.dump(config, f)
 
+# Define the active user and his data path
 user = config["active_user"]
 data_path = config["general"]["data_paths"][user]
 
+# Initialize the preprocessor and dataloader
 simple_preprocessor = SimplePreprocessor(
 	width=config["preprocessor"]["resize"]["width"], 
 	height=config["preprocessor"]["resize"]["height"]
 	)
 dataloader = SimpleDataLoader(data_path, preprocessors=simple_preprocessor)
 
+# Load the data
 data, labels = dataloader.load_data(
 	num_samples_subset=config["training"]["num_samples_subset"], 
 	start_idx=config["training"]["start_idx"], 
 	end_idx=config["training"]["end_idx"]
 	)
+if config["general"]["log_histograms"]:
+	histograms(labels, config) # create histograms for the labels
 
+# Flatten the data and labels
 imgs_flat = data.reshape(data.shape[0], -1) # flatten the image matrix to 1D vector
 labels_flat = labels.reshape(labels.shape[0], -1) # flatten the labels matrix to 1D vector
 
+# Save sample images
 show_images = config["general"]["show_sample_images"]
 folder_functions.create_folder(config["general"]["sample_img_path"])
 if show_images:
@@ -268,6 +342,7 @@ if show_images:
 			break
 		cv.imwrite(os.path.join(config["general"]["sample_img_path"], f"sample_image_{img_idx}.png"), data[img_idx])
 
+# Split the data into training and testing sets
 (trainX, testX, trainY, testY) = train_test_split(
 	imgs_flat, 
 	labels_flat, 
@@ -275,6 +350,7 @@ if show_images:
 	random_state=config["training"]["random_state"]
 	)
 
+# Split the training set into training and validation sets
 (trainX, valX, trainY, valY) = train_test_split(
 	trainX, 
 	trainY, 
@@ -282,16 +358,19 @@ if show_images:
 	random_state=config["training"]["random_state"]
 	)
 
+# Apply normalization
 if config["training"]["use_normalization"]:
 	print("Applying MinMaxScaler...")
 	scaler = MinMaxScaler()
 	trainX = scaler.fit_transform(trainX)
 	testX = scaler.transform(testX)
 
+# Apply PCA
 if config["training"]["use_pca"]:
 	print("Applying PCA...")
 	trainX, valX, testX = apply_PCA(trainX, valX, testX, config)
 
+# Find best setting for KNN using cross-validation or grid search
 if config["training"]["use_cross_validation"]:
 	best_k = apply_cross_validation(trainX, trainY, config)
 	knn = KNeighborsClassifier(n_neighbors=best_k, metric=config["classifier"]["distance_metric"])
