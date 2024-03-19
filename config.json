@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "remote_pc",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -16,22 +16,24 @@
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
         },
+        "log_confusion_matrix": false,
+        "save_classified_images": false,
         "show_sample_images": false,
         "save_cv_plot": true
     },
     "preprocessor": {
         "resize": {
-            "width": 200,
-            "height": 200
+            "width": 64,
+            "height": 64
         },
-        "crop_size": 240,
+        "crop_size": 150,
         "setting": {
             "crop": true,
             "resize": true,
             "rgb2gray": false,
-            "rgb2lab": true,
-            "clahe": true,
-            "unsharp": true
+            "rgb2lab": false,
+            "clahe": false,
+            "unsharp": false
                 }
     },
     "classifier": {
@@ -39,13 +41,18 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 100,
+        "num_samples_subset": 1000,
         "start_idx": null,
         "end_idx": null,
-        "test_size": 0.25,
+        "test_size": 0.1,
+        "val_size": 0.2,
         "random_state": 42,
+        "use_grid_search": true,
+        "use_normalization": true,
         "use_cross_validation": false,
-        "num_k": 10,
-        "cv_fold": 10
+        "num_k": 5,
+        "use_pca": false,
+        "pca_components": 0.95,
+        "cv_fold": 1
     }
 }
