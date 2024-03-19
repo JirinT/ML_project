@@ -37,7 +37,7 @@ class SimplePreprocessor:
         x = self.coordinates[0]
         y = self.coordinates[1]
         half_crop_size = int(np.floor(crop_size/2))
-        cropped_image = image[y-half_crop_size : y+half_crop_size, x-half_crop_size-50 : x+half_crop_size] # with -50 works better for images ive tried
+        cropped_image = image[y-half_crop_size-20 : y+half_crop_size+20, x-half_crop_size-50 : x+half_crop_size] # with -50 works better for images ive tried
     
         return cropped_image
     

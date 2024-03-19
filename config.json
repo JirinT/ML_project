@@ -1,33 +1,38 @@
 {
-    "active_user": "jan",
+    "active_user": "remote_pc",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
         "sample_img_path": "./logs/sample_images/",
-        "show_sample_images": true,
-        "save_cv_plot": true,
-
+        "classified_images_path":{
+            "correct": "./logs/classified_images/correct",
+            "incorrect": "./logs/classified_images/incorrect"
+        },
+        "conf_matrix_path": "./logs/confusion_matrix",
         "data_paths":{
             "jan": "./caxton_dataset",
             "leon": "test",
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
-        }
+        },
+        "save_classified_images": false,
+        "show_sample_images": false,
+        "save_cv_plot": true
     },
     "preprocessor": {
         "resize": {
-            "width": 200,
-            "height": 200
+            "width": 64,
+            "height": 64
         },
-        "crop_size": 240,
+        "crop_size": 150,
         "setting": {
             "crop": true,
             "resize": true,
             "rgb2gray": false,
-            "rgb2lab": true,
-            "clahe": true,
-            "unsharp": true
+            "rgb2lab": false,
+            "clahe": false,
+            "unsharp": false
                 }
     },
     "classifier": {
@@ -40,9 +45,10 @@
         "end_idx": null,
         "test_size": 0.1,
         "random_state": 42,
-        "use_normalization": true,
+        "use_grid_search": false,
+        "use_normalization": false,
         "use_cross_validation": false,
-        "num_k": 10,
-        "cv_fold": 5
+        "num_k": 2,
+        "cv_fold": 1
     }
 }
