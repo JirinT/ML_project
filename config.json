@@ -1,5 +1,5 @@
 {
-    "active_user": "remote_pc",
+    "active_user": "jiri",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -10,6 +10,7 @@
             "incorrect": "./logs/classified_images/incorrect"
         },
         "conf_matrix_path": "./logs/confusion_matrix",
+        "histogram_path": "./logs/histograms",
         "data_paths":{
             "jan": "./caxton_dataset",
             "leon": "test",
@@ -18,15 +19,16 @@
         },
         "log_classified_images": false,
         "log_confusion_matrix": true,
+        "log_histograms": true,
         "save_cv_plot": false,
-        "show_sample_images": false
+        "show_sample_images": true
     },
     "preprocessor": {
         "resize": {
             "width": 64,
             "height": 64
         },
-        "crop_size": 150,
+        "crop_size": 130,
         "setting": {
             "crop": true,
             "resize": true,
@@ -41,13 +43,13 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 100,
+        "num_samples_subset": 200,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.1,
         "val_size": 0.2,
         "random_state": 42,
-        "use_grid_search": true,
+        "use_grid_search": false,
         "use_normalization": true,
         "use_cross_validation": false,
         "num_k": 5,
