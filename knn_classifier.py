@@ -163,7 +163,7 @@ if show_images:
 (trainX, valX, trainY, valY) = train_test_split(
 	trainX, 
 	trainY, 
-	test_size=config["training"]["test_size"], 
+	test_size=config["training"]["val_size"], 
 	random_state=config["training"]["random_state"]
 	)
 
