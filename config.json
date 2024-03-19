@@ -16,9 +16,10 @@
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
         },
-        "save_classified_images": false,
-        "show_sample_images": false,
-        "save_cv_plot": true
+        "log_classified_images": false,
+        "log_confusion_matrix": true,
+        "save_cv_plot": false,
+        "show_sample_images": false
     },
     "preprocessor": {
         "resize": {
@@ -40,15 +41,18 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 10000,
+        "num_samples_subset": 100,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.1,
+        "val_size": 0.2,
         "random_state": 42,
-        "use_grid_search": false,
-        "use_normalization": false,
+        "use_grid_search": true,
+        "use_normalization": true,
         "use_cross_validation": false,
-        "num_k": 2,
-        "cv_fold": 1
+        "num_k": 5,
+        "cv_fold": 1,
+        "use_pca": true,
+        "pca_components": 0.95
     }
 }
