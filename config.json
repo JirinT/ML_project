@@ -16,6 +16,7 @@
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
         },
+        "log_confusion_matrix": false,
         "save_classified_images": false,
         "show_sample_images": false,
         "save_cv_plot": true
@@ -49,6 +50,8 @@
         "use_normalization": true,
         "use_cross_validation": false,
         "num_k": 5,
+        "use_pca": false,
+        "pca_components": 0.95,
         "cv_fold": 1
     }
 }
