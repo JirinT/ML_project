@@ -40,14 +40,15 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 10000,
+        "num_samples_subset": 100,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.1,
         "random_state": 42,
+        "use_grid_search": true,
         "use_normalization": false,
         "use_cross_validation": false,
-        "num_k": 10,
+        "num_k": 2,
         "cv_fold": 5
     }
 }
