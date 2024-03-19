@@ -65,28 +65,31 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config):
 
 	param_grid = {
 		'n_neighbors': range(1, config["training"]["num_k"]+1),
-		'metric': ['euclidean', 'manhattan', 'chebyshev']
+		'metric': ['euclidean', 'manhattan', 'chebyshev'],
+		"weights": ["uniform", "distance"]
 	}
 
 	best_accuracy = 0
 	best_params = {}
 
-	accuracy_table = {'Metric': [], 'k': [], 'Accuracy': []}
+	accuracy_table = {'Metric': [], 'k': [], 'Weight': [], 'Accuracy': []}
 
 	for k in param_grid["n_neighbors"]:
 		for metric in param_grid["metric"]:
-			knn = KNeighborsClassifier(n_neighbors=k, metric=metric)
-			knn.fit(trainX, trainY)
-			
-			validation_accuracy = knn.score(valX, valY)
+			for weight in param_grid["weights"]:
+				knn = KNeighborsClassifier(n_neighbors=k, metric=metric, weights=weight)
+				knn.fit(trainX, trainY)
+				
+				validation_accuracy = knn.score(valX, valY)
 
-			accuracy_table['Metric'].append(metric)
-			accuracy_table['k'].append(k)
-			accuracy_table['Accuracy'].append(validation_accuracy)
-			
-			if validation_accuracy > best_accuracy:
-				best_accuracy = validation_accuracy
-				best_params = {'n_neighbors': k, 'metric': metric}
+				accuracy_table['Metric'].append(metric)
+				accuracy_table['k'].append(k)
+				accuracy_table['Weight'].append(weight)
+				accuracy_table['Accuracy'].append(validation_accuracy)
+				
+				if validation_accuracy > best_accuracy:
+					best_accuracy = validation_accuracy
+					best_params = {'n_neighbors': k, 'metric': metric, 'weight': weight}
 
 	accuracy_df = pd.DataFrame(accuracy_table)
 
@@ -195,7 +198,7 @@ if config["training"]["use_cross_validation"]:
 	knn.fit(trainX, trainY)
 elif config["training"]["use_grid_search"]:
 	best_params = apply_own_grid_search(trainX, trainY, valX, valY, config)
-	knn = KNeighborsClassifier(n_neighbors=best_params["n_neighbors"], metric=best_params["metric"])
+	knn = KNeighborsClassifier(n_neighbors=best_params["n_neighbors"], metric=best_params["metric"], weights=best_params["weight"])
 	knn.fit(trainX, trainY)
 else:
 	k = config["classifier"]["k_value"]

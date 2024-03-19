@@ -48,7 +48,7 @@
         "use_grid_search": true,
         "use_normalization": true,
         "use_cross_validation": false,
-        "num_k": 2,
+        "num_k": 5,
         "cv_fold": 1
     }
 }
