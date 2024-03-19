@@ -8,16 +8,54 @@ import matplotlib.pyplot as plt
 import folder_functions
 
 from datetime import datetime
+from scipy.stats import norm
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, accuracy_score
-from tqdm import tqdm
 
 from preprocessing.simple_preprocessor import SimplePreprocessor
 from datasets.simple_dataloader import SimpleDataLoader
 
+
+def decode_labels(labels):
+	flow_rate = np.zeros((3,))
+	lateral_speed = np.zeros((3,))
+	z_offset = np.zeros((3,))
+	hotend_temperature = np.zeros((3,))
+
+	for i in range(labels.shape[0]):
+		flow_rate = np.vstack((flow_rate,labels[i][:3]))
+		lateral_speed = np.vstack((lateral_speed,labels[i][3:6]))
+		z_offset = np.vstack((z_offset,labels[i][6:9]))
+		hotend_temperature = np.vstack((hotend_temperature,labels[i][9:]))
+
+	flow_rate_decoded = np.argmax(flow_rate, axis=1) + 1
+	lateral_speed_decoded = np.argmax(lateral_speed, axis=1) + 1
+	z_offset_decoded = np.argmax(z_offset, axis=1) + 1
+	hotend_temperature_decoded = np.argmax(hotend_temperature, axis=1) + 1
+
+	return flow_rate_decoded, lateral_speed_decoded, z_offset_decoded, hotend_temperature_decoded
+
+
+def apply_grid_search(knn, trainX, trainY, config):
+	
+	print("Starting grid search...")
+
+	param_grid = {
+		'n_neighbors': range(1, config["training"]["num_k"]),
+		'metric': ['euclidean', 'manhattan', 'chebyshev']
+	}
+
+	grid_search = GridSearchCV(knn, param_grid, cv=config["training"]["cv_fold"])
+
+	grid_search.fit(trainX, trainY)
+
+	print("Best Parameters:", grid_search.best_params_)
+	print("Best Score:", grid_search.best_score_)
+
+	return grid_search
 
 config = json.load(open("config.json"))
 
@@ -107,6 +145,11 @@ if config["training"]["use_cross_validation"]:
 
 	knn = KNeighborsClassifier(n_neighbors=best_k, metric=config["classifier"]["distance_metric"])
 	knn.fit(trainX, trainY)
+elif config["training"]["use_grid_search"]:
+	knn = KNeighborsClassifier()
+	grid_search_result = apply_grid_search(knn, trainX, trainY, config)
+	knn = grid_search_result.best_estimator_
+	knn.fit(trainX, trainY)
 else:
 	k = config["classifier"]["k_value"]
 	knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
@@ -143,29 +186,9 @@ if config["general"]["save_classified_images"]:
 	# Save the images:
 	folder_functions.save_images(correct_class_path, correct_classification)
 	folder_functions.save_images(incorrect_class_path, incorrect_classification)
-
-# decode predicted labels:
-def decode(labels):
-	flow_rate = np.zeros((3,))
-	lateral_speed = np.zeros((3,))
-	z_offset = np.zeros((3,))
-	hotend_temperature = np.zeros((3,))
-
-	for i in range(labels.shape[0]):
-		flow_rate = np.vstack((flow_rate,labels[i][:3]))
-		lateral_speed = np.vstack((lateral_speed,labels[i][3:6]))
-		z_offset = np.vstack((z_offset,labels[i][6:9]))
-		hotend_temperature = np.vstack((hotend_temperature,labels[i][9:]))
-
-	flow_rate_decoded = np.argmax(flow_rate, axis=1) + 1
-	lateral_speed_decoded = np.argmax(lateral_speed, axis=1) + 1
-	z_offset_decoded = np.argmax(z_offset, axis=1) + 1
-	hotend_temperature_decoded = np.argmax(hotend_temperature, axis=1) + 1
-
-	return flow_rate_decoded, lateral_speed_decoded, z_offset_decoded, hotend_temperature_decoded
 	
-flow_rate_test_decoded, lateral_speed_test_decoded, z_offset_test_decoded, hotend_temperature_test_decoded = decode(testY)
-flow_rate_predicted_decoded, lateral_speed_predicted_decoded, z_offset_predicted_decoded, hotend_temperature_predicted_decoded = decode(y_predicted)
+flow_rate_test_decoded, lateral_speed_test_decoded, z_offset_test_decoded, hotend_temperature_test_decoded = decode_labels(testY)
+flow_rate_predicted_decoded, lateral_speed_predicted_decoded, z_offset_predicted_decoded, hotend_temperature_predicted_decoded = decode_labels(y_predicted)
 
 # Plot confusion matrix
 fig, axs = plt.subplots(2,2,figsize=(8, 5))
@@ -203,6 +226,7 @@ flow_rate_acc = accuracy_score(flow_rate_test_decoded, flow_rate_predicted_decod
 lateral_speed_acc = accuracy_score(lateral_speed_test_decoded, lateral_speed_predicted_decoded)
 z_offset_acc = accuracy_score(z_offset_test_decoded, z_offset_predicted_decoded)
 hotend_temperature_acc = accuracy_score(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded)
+
 test_accuracy = knn.score(testX, testY)
 
 with open(os.path.join(log_folder_training, "log.txt"), "a") as file:

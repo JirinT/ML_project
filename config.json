@@ -45,6 +45,7 @@
         "end_idx": null,
         "test_size": 0.1,
         "random_state": 42,
+        "use_grid_search": true,
         "use_normalization": false,
         "use_cross_validation": true,
         "num_k": 10,
