@@ -142,7 +142,7 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config):
 
 def apply_PCA(trainX, valX, testX, config):
 
-	pca = PCA(n_components=config["training"]["pca_components"], njobs=-1)
+	pca = PCA(n_components=config["training"]["pca_components"])
 	trainX = pca.fit_transform(trainX)
 	valX = pca.transform(valX)
 	testX = pca.transform(testX)
