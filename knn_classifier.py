@@ -113,7 +113,7 @@ def apply_grid_search_cv(knn, trainX, trainY, config):
 
 def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 
-	print("Starting grid search...")
+	print(f"Starting grid search for label: {label} ...")
 
 	param_grid = {
 		'n_neighbors': range(1, config["training"]["num_k"]+1),
@@ -132,7 +132,7 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 	best_accuracy = max(result['accuracy'] for result in results)
 	best_params = [result for result in results if result['accuracy'] == best_accuracy][0]
 
-	accuracy_df.to_csv(os.path.join(log_folder_training, "grid_search.csv"), sep='\t', index=False)
+	accuracy_df.to_csv(os.path.join(log_folder_training, f"grid_search_{label}.csv"), sep='\t', index=False)
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write(f"Grid search for {label}:\n")
 		file.write("\tBest Parameters: " + str(best_params) + "\n")
@@ -373,24 +373,23 @@ elif config["training"]["use_grid_search"]:
 
 	if config["training"]["knn_all_in_one"]:
 		best_params_all = apply_own_grid_search(trainX, trainY, valX, valY, config, label="all")
-	best_params_flow_rate = apply_own_grid_search(trainX, trainY[:, 0:3], valX, valY[:, 0:3], config, label="flow_rate")
-	best_params_lateral_speed = apply_own_grid_search(trainX, trainY[:, 3:6], valX, valY[:, 3:6], config, label="lateral_speed")
-	best_params_z_offset = apply_own_grid_search(trainX, trainY[:, 6:9], valX, valY[:, 6:9], config, label="z_offset")
-	best_params_hotend_temperature = apply_own_grid_search(trainX, trainY[:, 9:], valX, valY[:, 9:], config, label="hotend_temperature")
-	
-	if config["training"]["knn_all_in_one"]:
 		knn_all = KNeighborsClassifier(n_neighbors=best_params_all["k"], metric=best_params_all["metric"], weights=best_params_all["weight"])
-	knn_flow_rate = KNeighborsClassifier(n_neighbors=best_params_flow_rate["k"], metric=best_params_flow_rate["metric"], weights=best_params_flow_rate["weight"])
-	knn_lateral_speed = KNeighborsClassifier(n_neighbors=best_params_lateral_speed["k"], metric=best_params_lateral_speed["metric"], weights=best_params_lateral_speed["weight"])
-	knn_z_offset = KNeighborsClassifier(n_neighbors=best_params_z_offset["k"], metric=best_params_z_offset["metric"], weights=best_params_z_offset["weight"])
-	knn_hotend_temperature = KNeighborsClassifier(n_neighbors=best_params_hotend_temperature["k"], metric=best_params_hotend_temperature["metric"], weights=best_params_hotend_temperature["weight"])
-
-	if config["training"]["knn_all_in_one"]:
 		knn_all.fit(trainX, trainY)
-	knn_flow_rate.fit(trainX, trainY[:,0:3])
-	knn_lateral_speed.fit(trainX, trainY[:,3:6])
-	knn_z_offset.fit(trainX, trainY[:,6:9])
-	knn_hotend_temperature.fit(trainX, trainY[:,9:])
+	else:
+		best_params_flow_rate = apply_own_grid_search(trainX, trainY[:, 0:3], valX, valY[:, 0:3], config, label="flow_rate")
+		best_params_lateral_speed = apply_own_grid_search(trainX, trainY[:, 3:6], valX, valY[:, 3:6], config, label="lateral_speed")
+		best_params_z_offset = apply_own_grid_search(trainX, trainY[:, 6:9], valX, valY[:, 6:9], config, label="z_offset")
+		best_params_hotend_temperature = apply_own_grid_search(trainX, trainY[:, 9:], valX, valY[:, 9:], config, label="hotend_temperature")
+	
+		knn_flow_rate = KNeighborsClassifier(n_neighbors=best_params_flow_rate["k"], metric=best_params_flow_rate["metric"], weights=best_params_flow_rate["weight"])
+		knn_lateral_speed = KNeighborsClassifier(n_neighbors=best_params_lateral_speed["k"], metric=best_params_lateral_speed["metric"], weights=best_params_lateral_speed["weight"])
+		knn_z_offset = KNeighborsClassifier(n_neighbors=best_params_z_offset["k"], metric=best_params_z_offset["metric"], weights=best_params_z_offset["weight"])
+		knn_hotend_temperature = KNeighborsClassifier(n_neighbors=best_params_hotend_temperature["k"], metric=best_params_hotend_temperature["metric"], weights=best_params_hotend_temperature["weight"])
+
+		knn_flow_rate.fit(trainX, trainY[:,0:3])
+		knn_lateral_speed.fit(trainX, trainY[:,3:6])
+		knn_z_offset.fit(trainX, trainY[:,6:9])
+		knn_hotend_temperature.fit(trainX, trainY[:,9:])
 
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write("\nGrid search took {:.2f} seconds.\n".format(time.time() - start_time))
@@ -401,27 +400,26 @@ else:
 
 if config["training"]["knn_all_in_one"]:
 	y_predicted_all = knn_all.predict(testX)
-y_predicted_flow_rate = knn_flow_rate.predict(testX)
-y_predicted_lateral_speed = knn_lateral_speed.predict(testX)
-y_predicted_z_offset = knn_z_offset.predict(testX)
-y_predicted_hotend_temperature = knn_hotend_temperature.predict(testX)
-
-if config["training"]["knn_all_in_one"]:
 	test_accuracy_all = knn_all.score(testX, testY)
-test_accuracy_flow_rate = knn_flow_rate.score(testX, testY[:, 0:3])
-test_accuracy_lateral_speed = knn_lateral_speed.score(testX, testY[:, 3:6])
-test_accuracy_z_offset = knn_z_offset.score(testX, testY[:, 6:9])
-test_accuracy_hotend_temperature = knn_hotend_temperature.score(testX, testY[:, 9:])
-
-if config["training"]["knn_all_in_one"]:
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write("\nTest Accuracy All classes: {:.2f}%".format(test_accuracy_all * 100))
-with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
-	file.write("\nTest accuracies:\n")
-	file.write("\tFlow Rate: {:.2f}%\n".format(test_accuracy_flow_rate * 100))
-	file.write("\tLateral Speed: {:.2f}%\n".format(test_accuracy_lateral_speed * 100))
-	file.write("\tZ Offset: {:.2f}%\n".format(test_accuracy_z_offset * 100))
-	file.write("\tHotend Temperature: {:.2f}%\n".format(test_accuracy_hotend_temperature * 100))
+else:
+	y_predicted_flow_rate = knn_flow_rate.predict(testX)
+	y_predicted_lateral_speed = knn_lateral_speed.predict(testX)
+	y_predicted_z_offset = knn_z_offset.predict(testX)
+	y_predicted_hotend_temperature = knn_hotend_temperature.predict(testX)
+
+	test_accuracy_flow_rate = knn_flow_rate.score(testX, testY[:, 0:3])
+	test_accuracy_lateral_speed = knn_lateral_speed.score(testX, testY[:, 3:6])
+	test_accuracy_z_offset = knn_z_offset.score(testX, testY[:, 6:9])
+	test_accuracy_hotend_temperature = knn_hotend_temperature.score(testX, testY[:, 9:])
+
+	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
+		file.write("\nTest accuracies:\n")
+		file.write("\tFlow Rate: {:.2f}%\n".format(test_accuracy_flow_rate * 100))
+		file.write("\tLateral Speed: {:.2f}%\n".format(test_accuracy_lateral_speed * 100))
+		file.write("\tZ Offset: {:.2f}%\n".format(test_accuracy_z_offset * 100))
+		file.write("\tHotend Temperature: {:.2f}%\n".format(test_accuracy_hotend_temperature * 100))
 
 y_predicted = np.hstack((y_predicted_flow_rate, y_predicted_lateral_speed, y_predicted_z_offset, y_predicted_hotend_temperature))
 
