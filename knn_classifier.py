@@ -216,19 +216,6 @@ def log_confusion_matrix(testY, y_predicted, config):
 
 	plt.savefig(os.path.join(conf_matrix_path, filename))
 
-	flow_rate_acc = accuracy_score(flow_rate_test_decoded, flow_rate_predicted_decoded)
-	lateral_speed_acc = accuracy_score(lateral_speed_test_decoded, lateral_speed_predicted_decoded)
-	z_offset_acc = accuracy_score(z_offset_test_decoded, z_offset_predicted_decoded)
-	hotend_temperature_acc = accuracy_score(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded)
-
-	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
-		file.write(f"\nFlow rate accuracy: {round(flow_rate_acc * 100, 2)} %\n"
-				f"Lateral speed accuracy: {round(lateral_speed_acc * 100, 2)} %\n"
-				f"Z offset accuracy: {round(z_offset_acc * 100, 2)} %\n"
-				f"Hot end temperature accuracy: {round(hotend_temperature_acc * 100, 2)} %\n")
-
-	print("Accuracy saved to log files.")
-
 def histograms(labels, config):
 	# HISTOGRAM for every combination of labels
 	# Convert each vector to a tuple and then to a string
