@@ -186,22 +186,22 @@ def log_confusion_matrix(testY, y_predicted, config):
 
 	# Plot confusion matrix
 	fig, axs = plt.subplots(2,2,figsize=(8, 5))
-	cmp1 = ConfusionMatrixDisplay(confusion_matrix(flow_rate_test_decoded, flow_rate_predicted_decoded, normalize="pred"),
+	cmp1 = ConfusionMatrixDisplay(confusion_matrix(flow_rate_test_decoded, flow_rate_predicted_decoded, normalize="true"),
 								display_labels=["Low", "Good", "High"])
 	cmp1.plot(ax=axs[0, 0])
 	axs[0, 0].set_title('Flow Rate')
 
-	cmp2 = ConfusionMatrixDisplay(confusion_matrix(lateral_speed_test_decoded, lateral_speed_predicted_decoded, normalize="pred"),
+	cmp2 = ConfusionMatrixDisplay(confusion_matrix(lateral_speed_test_decoded, lateral_speed_predicted_decoded, normalize="true"),
 								display_labels=["Low", "Good", "High"])
 	cmp2.plot(ax=axs[0, 1])
 	axs[0, 1].set_title('Lateral Speed')
 
-	cmp3 = ConfusionMatrixDisplay(confusion_matrix(z_offset_test_decoded, z_offset_predicted_decoded, normalize="pred"),
+	cmp3 = ConfusionMatrixDisplay(confusion_matrix(z_offset_test_decoded, z_offset_predicted_decoded, normalize="true"),
 								display_labels=["Low", "Good", "High"])
 	cmp3.plot(ax=axs[1, 0])
 	axs[1, 0].set_title('Z offset')
 
-	cmp4 = ConfusionMatrixDisplay(confusion_matrix(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded, normalize="pred"),
+	cmp4 = ConfusionMatrixDisplay(confusion_matrix(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded, normalize="true"),
 								display_labels=["Low", "Good", "High"])
 	cmp4.plot(ax=axs[1, 1])
 	axs[1, 1].set_title('Hotend Temperature')
