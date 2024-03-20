@@ -1,5 +1,5 @@
 {
-    "active_user": "remote_pc",
+    "active_user": "jan",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -19,16 +19,16 @@
         },
         "log_classified_images": false,
         "log_confusion_matrix": true,
-        "log_histograms": true,
+        "log_histograms": false,
         "save_cv_plot": false,
-        "show_sample_images": true
+        "show_sample_images": false
     },
     "preprocessor": {
         "resize": {
-            "width": 64,
-            "height": 64
+            "width": 16,
+            "height": 16
         },
-        "crop_size": 130,
+        "crop_size": 150,
         "setting": {
             "crop": true,
             "resize": true,
@@ -43,18 +43,18 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 200,
+        "num_samples_subset": 100000,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.1,
         "val_size": 0.2,
         "random_state": 42,
-        "use_grid_search": false,
-        "use_normalization": true,
+        "use_grid_search": true,
+        "use_normalization": false,
         "use_cross_validation": false,
-        "num_k": 5,
+        "num_k": 10,
         "cv_fold": 1,
-        "use_pca": true,
+        "use_pca": false,
         "pca_components": 0.95
     }
 }

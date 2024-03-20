@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import folder_functions
 
 from datetime import datetime
+from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
@@ -77,6 +78,20 @@ def apply_cross_validation(trainX, trainY, config):
 	return best_k
 
 
+def evaluate_knn(params, trainX, trainY, valX, valY):
+
+	k = params['k']
+	metric = params['metric']
+	weight = params['weight']
+	print(f"Evaluating k={k}, metric={metric}, weight={weight}...")
+	knn = KNeighborsClassifier(n_neighbors=k, metric=metric, weights=weight)
+	knn.fit(trainX, trainY)
+
+	validation_accuracy = knn.score(valX, valY)
+
+	return {'k': k, 'metric': metric, 'weight': weight, 'accuracy': validation_accuracy}
+
+
 def apply_grid_search_cv(knn, trainX, trainY, config):
 	
 	print("Starting grid search...")
@@ -106,42 +121,28 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config):
 		"weights": ["uniform", "distance"]
 	}
 
-	best_accuracy = 0
-	best_params = {'n_neighbors': 1, 'metric': "euclidean", 'weight': "uniform"}
+	param_combinations = [{'k': k, 'metric': metric, 'weight': weight} for k in param_grid["n_neighbors"]
+                      for metric in param_grid["metric"]
+                      for weight in param_grid["weights"]]
 
-	accuracy_table = {'Metric': [], 'k': [], 'Weight': [], 'Accuracy': []}
+	results = Parallel(n_jobs=-1)(delayed(evaluate_knn)(params, trainX, trainY, valX, valY) for params in param_combinations)
 
-	for k in param_grid["n_neighbors"]:
-		for metric in param_grid["metric"]:
-			for weight in param_grid["weights"]:
-				print(f"Evaluating k={k}, metric={metric}, weight={weight}...")
-				knn = KNeighborsClassifier(n_neighbors=k, metric=metric, weights=weight)
-				knn.fit(trainX, trainY)
-				
-				validation_accuracy = knn.score(valX, valY)
+	accuracy_df = pd.DataFrame(results)
 
-				accuracy_table['Metric'].append(metric)
-				accuracy_table['k'].append(k)
-				accuracy_table['Weight'].append(weight)
-				accuracy_table['Accuracy'].append(validation_accuracy)
-				
-				if validation_accuracy > best_accuracy:
-					best_accuracy = validation_accuracy
-					best_params = {'n_neighbors': k, 'metric': metric, 'weight': weight}
-
-	accuracy_df = pd.DataFrame(accuracy_table)
+	best_accuracy = max(result['accuracy'] for result in results)
+	best_params = [result for result in results if result['accuracy'] == best_accuracy][0]
 
 	accuracy_df.to_csv(os.path.join(log_folder_training, "grid_search.csv"), sep='\t', index=False)
-
-	print("Best Parameters:", best_params)
-	print("Best Score:", best_accuracy)
+	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
+		file.write("\nBest Parameters: " + str(best_params) + "\n")
+		file.write("\nBest Accuracy: {:.2f}%".format(best_accuracy * 100) + "\n")
 
 	return best_params
 
 
 def apply_PCA(trainX, valX, testX, config):
 
-	pca = PCA(n_components=config["training"]["pca_components"])
+	pca = PCA(n_components=config["training"]["pca_components"], njobs=-1)
 	trainX = pca.fit_transform(trainX)
 	valX = pca.transform(valX)
 	testX = pca.transform(testX)
@@ -287,15 +288,6 @@ def histograms(labels, config):
 
 
 config = json.load(open("config.json"))
-# Clear folders in the logs folder
-if config["active_user"] != "remote_pc":
-	folder_functions.delete_all_in_folder(config["general"]["histogram_path"])
-	folder_functions.delete_all_in_folder(config["general"]["log_path"])
-	folder_functions.delete_all_in_folder(config["general"]["plot_path"])
-	folder_functions.delete_all_in_folder(config["general"]["sample_img_path"])
-	folder_functions.delete_all_in_folder(config["general"]["classified_images_path"]["correct"])
-	folder_functions.delete_all_in_folder(config["general"]["classified_images_path"]["incorrect"])
-	folder_functions.delete_all_in_folder(config["general"]["conf_matrix_path"])
 
 now = datetime.now()
 now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -326,7 +318,7 @@ data, labels = dataloader.load_data(
 	start_idx=config["training"]["start_idx"], 
 	end_idx=config["training"]["end_idx"]
 	)
-if config["general"]["log_histograms"]:
+if config["general"]["log_histograms"] and user == "remote_pc":
 	histograms(labels, config) # create histograms for the labels
 
 # Flatten the data and labels
@@ -336,7 +328,7 @@ labels_flat = labels.reshape(labels.shape[0], -1) # flatten the labels matrix to
 # Save sample images
 show_images = config["general"]["show_sample_images"]
 folder_functions.create_folder(config["general"]["sample_img_path"])
-if show_images:
+if show_images and user == "remote_pc":
 	for img_idx in range(len(data)):
 		if img_idx > 5:
 			break
@@ -376,9 +368,12 @@ if config["training"]["use_cross_validation"]:
 	knn = KNeighborsClassifier(n_neighbors=best_k, metric=config["classifier"]["distance_metric"])
 	knn.fit(trainX, trainY)
 elif config["training"]["use_grid_search"]:
+	start_time = time.time()
 	best_params = apply_own_grid_search(trainX, trainY, valX, valY, config)
-	knn = KNeighborsClassifier(n_neighbors=best_params["n_neighbors"], metric=best_params["metric"], weights=best_params["weight"])
+	knn = KNeighborsClassifier(n_neighbors=best_params["k"], metric=best_params["metric"], weights=best_params["weight"])
 	knn.fit(trainX, trainY)
+	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
+		file.write("\nGrid search took {:.2f} seconds.".format(time.time() - start_time))
 else:
 	k = config["classifier"]["k_value"]
 	knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
@@ -391,8 +386,8 @@ print("Test Accuracy: {:.2f}%".format(test_accuracy * 100))
 with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 	file.write("\nTest Accuracy: {:.2f}%".format(test_accuracy * 100))
 
-if config["general"]["log_classified_images"]:
+if config["general"]["log_classified_images"] and user == "remote_pc":
 	log_classified_samples(testX, testY, y_predicted, config)
 
-if config["general"]["log_confusion_matrix"]:
+if config["general"]["log_confusion_matrix"] and user == "remote_pc":
 	log_confusion_matrix(testY, y_predicted, config)
