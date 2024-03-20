@@ -1,5 +1,5 @@
 {
-    "active_user": "jan",
+    "active_user": "jiri",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -17,7 +17,7 @@
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
         },
-        "log_classified_images": false,
+        "log_classified_images": true,
         "log_confusion_matrix": true,
         "log_histograms": false,
         "save_cv_plot": false,
@@ -43,7 +43,7 @@
         "distance_metric": "euclidean"
     },
     "training": {
-        "num_samples_subset": 100000,
+        "num_samples_subset": 100,
         "start_idx": null,
         "end_idx": null,
         "test_size": 0.1,
@@ -55,6 +55,7 @@
         "num_k": 10,
         "cv_fold": 1,
         "use_pca": false,
-        "pca_components": 0.95
+        "pca_components": 0.95,
+        "knn_all_in_one": false
     }
 }
