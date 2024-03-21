@@ -88,10 +88,10 @@ def evaluate_knn(params, trainX, trainY, valX, valY):
 	knn.fit(trainX, trainY)
 
 	validation_accuracy = knn.score(valX, valY)
-	f1 = f1_score(valY, knn.predict(valX), average=None)
-	f1 = np.mean(f1)
+	f1_each_label = f1_score(valY, knn.predict(valX), average=None)
+	f1 = np.mean(f1_each_label)
 
-	return {'k': k, 'metric': metric, 'weight': weight, 'accuracy': validation_accuracy, 'f1_score': f1}
+	return {'k': k, 'metric': metric, 'weight': weight, 'accuracy': validation_accuracy, 'f1_score_avg': f1, 'f1_score_each': f1_each_label}
 
 
 def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
@@ -113,20 +113,23 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 	accuracy_df = pd.DataFrame(results)
 
 	best_accuracy = max(result['accuracy'] for result in results)
-	best_f1_score = max(result['f1_score'] for result in results)
+	best_f1_score = max(result['f1_score_avg'] for result in results)
 
 	if config["training"]["optimizer_metric"]["accuracy"]:
 		best_params = [result for result in results if result['accuracy'] == best_accuracy][0]
 	else:
-		best_params = [result for result in results if result['f1_score'] == best_f1_score][0]
+		best_params = [result for result in results if result['f1_score_avg'] == best_f1_score][0]
 
 	accuracy_df.to_csv(os.path.join(log_folder_training, f"grid_search_{label}.csv"), sep='\t', index=False)
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write(f"Grid search for {label}:\n")
 		file.write("\tBest Parameters: " + str(best_params) + "\n")
 		file.write("\tBest Validation set Accuracy: {:.2f}%".format(best_accuracy * 100) + "\n")
-		file.write("\tBest Validation set F1 Score: {:.2f}%".format(best_f1_score * 100) + "\n")
-
+		file.write("\tBest Validation set average F1 Score: {:.2f}%".format(best_f1_score * 100) + "\n")
+		file.write("\n\tF1 Score for each label:\n")
+		file.write("\t\tLow: {:.2f}%\n".format(best_params["f1_score_each"][0] * 100))
+		file.write("\t\tGood: {:.2f}%\n".format(best_params["f1_score_each"][1] * 100))
+		file.write("\t\tHigh: {:.2f}%\n\n".format(best_params["f1_score_each"][2] * 100))
 	return best_params
 
 
@@ -408,7 +411,7 @@ else:
 		file.write("\tLateral Speed: {:.2f}%\n".format(test_accuracy_lateral_speed * 100))
 		file.write("\tZ Offset: {:.2f}%\n".format(test_accuracy_z_offset * 100))
 		file.write("\tHotend Temperature: {:.2f}%\n".format(test_accuracy_hotend_temperature * 100))
-		file.write("\nTest F1 scores:\n")
+		file.write("\nTest F1 scores (average values):\n")
 		file.write("\tFlow Rate: {:.2f}%\n".format(f1_score_flow_rate * 100))
 		file.write("\tLateral Speed: {:.2f}%\n".format(f1_score_lateral_speed * 100))
 		file.write("\tZ Offset: {:.2f}%\n".format(f1_score_z_offset * 100))
