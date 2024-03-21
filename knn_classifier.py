@@ -411,10 +411,10 @@ else:
 if not config["training"]["knn_all_in_one"]:
 	y_predicted = np.hstack((y_predicted_flow_rate, y_predicted_lateral_speed, y_predicted_z_offset, y_predicted_hotend_temperature))
 
-if config["general"]["log_classified_images"]: #and user == "remote_pc":
+if config["general"]["log_classified_images"] and user == "remote_pc":
 	log_classified_samples(testX, testY, y_predicted, config)
 
-if config["general"]["log_confusion_matrix"]: #and user == "remote_pc":
+if config["general"]["log_confusion_matrix"] and user == "remote_pc":
 	log_confusion_matrix(testY, y_predicted, config)
 
 print("End of KNN classification. Logs saved to log folder.")
