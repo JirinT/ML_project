@@ -92,25 +92,6 @@ def evaluate_knn(params, trainX, trainY, valX, valY):
 	return {'k': k, 'metric': metric, 'weight': weight, 'accuracy': validation_accuracy}
 
 
-def apply_grid_search_cv(knn, trainX, trainY, config):
-	
-	print("Starting grid search...")
-
-	param_grid = {
-		'n_neighbors': range(1, config["training"]["num_k"]+1),
-		'metric': ['euclidean', 'manhattan', 'chebyshev']
-	}
-
-	grid_search = GridSearchCV(knn, param_grid, cv=config["training"]["cv_fold"])
-
-	grid_search.fit(trainX, trainY)
-
-	print("Best Parameters:", grid_search.best_params_)
-	print("Best Score:", grid_search.best_score_)
-
-	return grid_search
-
-
 def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 
 	print(f"Starting grid search for label: {label} ...")
