@@ -12,7 +12,7 @@ from datetime import datetime
 from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, f1_score
