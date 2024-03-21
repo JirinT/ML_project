@@ -88,7 +88,8 @@ def evaluate_knn(params, trainX, trainY, valX, valY):
 	knn.fit(trainX, trainY)
 
 	validation_accuracy = knn.score(valX, valY)
-	f1 = f1_score(valY, knn.predict(valX), average='weighted')
+	f1 = f1_score(valY, knn.predict(valX), average=None)
+	f1 = np.mean(f1)
 
 	return {'k': k, 'metric': metric, 'weight': weight, 'accuracy': validation_accuracy, 'f1_score': f1}
 
@@ -376,7 +377,8 @@ else:
 if config["training"]["knn_all_in_one"]:
 	y_predicted = knn_all.predict(testX)
 	test_accuracy_all = knn_all.score(testX, testY)
-	f1_score_all = f1_score(testY, y_predicted, average='weighted')
+	f1_score_all = f1_score(testY, y_predicted, average=None)
+	f1_score_all = np.mean(f1_score_all)
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write("\nTest Accuracy All Classes: {:.2f}%".format(test_accuracy_all * 100))
 		file.write("\nF1 Score All Classes: {:.2f}%".format(f1_score_all * 100))
@@ -391,10 +393,14 @@ else:
 	test_accuracy_z_offset = knn_z_offset.score(testX, testY[:, 6:9])
 	test_accuracy_hotend_temperature = knn_hotend_temperature.score(testX, testY[:, 9:])
 
-	f1_score_flow_rate = f1_score(testY[:, 0:3], y_predicted_flow_rate, average='weighted')
-	f1_score_lateral_speed = f1_score(testY[:, 3:6], y_predicted_lateral_speed, average='weighted')
-	f1_score_z_offset = f1_score(testY[:, 6:9], y_predicted_z_offset, average='weighted')
-	f1_score_hotend_temperature = f1_score(testY[:, 9:], y_predicted_hotend_temperature, average='weighted')
+	f1_score_flow_rate = f1_score(testY[:, 0:3], y_predicted_flow_rate, average=None)
+	f1_score_flow_rate = np.mean(f1_score_flow_rate)
+	f1_score_lateral_speed = f1_score(testY[:, 3:6], y_predicted_lateral_speed, average=None)
+	f1_score_lateral_speed = np.mean(f1_score_lateral_speed)
+	f1_score_z_offset = f1_score(testY[:, 6:9], y_predicted_z_offset, average=None)
+	f1_score_z_offset = np.mean(f1_score_z_offset)
+	f1_score_hotend_temperature = f1_score(testY[:, 9:], y_predicted_hotend_temperature, average=None)
+	f1_score_hotend_temperature = np.mean(f1_score_hotend_temperature)
 
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write("\nTest accuracies:\n")
