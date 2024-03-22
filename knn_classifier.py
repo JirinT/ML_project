@@ -238,28 +238,28 @@ def histograms(labels, config):
 	unique_z_offset, counts_z_offset = np.unique(z_offset_labels, return_counts=True, axis=0)
 	unique_hotend_temperature, counts_hotend_temperature = np.unique(hotend_temperature_labels, return_counts=True, axis=0)
 
-	plt.figure("Histograms for each label", figsize=(8, 8))
+	plt.figure("Histograms for each label", figsize=(13, 8))
 	plt.subplot(2, 2, 1)
 	plt.bar(range(len(unique_flow_rate)), counts_flow_rate)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Flow Rate")
 
 	plt.subplot(2, 2, 2)
 	plt.bar(range(len(unique_lateral_speed)), counts_lateral_speed)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Lateral Speed")
 
 	plt.subplot(2, 2, 3)
 	plt.bar(range(len(unique_z_offset)), counts_z_offset)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Z Offset")
 
 	plt.subplot(2, 2, 4)
 	plt.bar(range(len(unique_hotend_temperature)), counts_hotend_temperature)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Hotend Temperature")
 
@@ -374,8 +374,8 @@ elif config["training"]["use_grid_search"]:
 		file.write("\nGrid search took {:.2f} seconds.\n".format(time.time() - start_time))
 else:
 	k = config["classifier"]["k_value"]
-	knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
-	knn.fit(trainX, trainY)
+	knn_all = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
+	knn_all.fit(trainX, trainY)
 
 if config["training"]["knn_all_in_one"]:
 	y_predicted = knn_all.predict(testX)
