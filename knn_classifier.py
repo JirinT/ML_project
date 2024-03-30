@@ -12,10 +12,10 @@ from datetime import datetime
 from joblib import Parallel, delayed
 from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, accuracy_score
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix, f1_score
 
 from preprocessing.simple_preprocessor import SimplePreprocessor
 from datasets.simple_dataloader import SimpleDataLoader
@@ -88,8 +88,10 @@ def evaluate_knn(params, trainX, trainY, valX, valY):
 	knn.fit(trainX, trainY)
 
 	validation_accuracy = knn.score(valX, valY)
+	f1_each_label = f1_score(valY, knn.predict(valX), average=None)
+	f1 = np.mean(f1_each_label)
 
-	return {'k': k, 'metric': metric, 'weight': weight, 'accuracy': validation_accuracy}
+	return {'k': k, 'metric': metric, 'weight': weight, 'accuracy': validation_accuracy, 'f1_score_avg': f1, 'f1_score_each': f1_each_label}
 
 
 def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
@@ -111,14 +113,23 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 	accuracy_df = pd.DataFrame(results)
 
 	best_accuracy = max(result['accuracy'] for result in results)
-	best_params = [result for result in results if result['accuracy'] == best_accuracy][0]
+	best_f1_score = max(result['f1_score_avg'] for result in results)
+
+	if config["training"]["optimizer_metric"]["accuracy"]:
+		best_params = [result for result in results if result['accuracy'] == best_accuracy][0]
+	else:
+		best_params = [result for result in results if result['f1_score_avg'] == best_f1_score][0]
 
 	accuracy_df.to_csv(os.path.join(log_folder_training, f"grid_search_{label}.csv"), sep='\t', index=False)
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write(f"Grid search for {label}:\n")
 		file.write("\tBest Parameters: " + str(best_params) + "\n")
 		file.write("\tBest Validation set Accuracy: {:.2f}%".format(best_accuracy * 100) + "\n")
-
+		file.write("\tBest Validation set average F1 Score: {:.2f}%".format(best_f1_score * 100) + "\n")
+		file.write("\n\tF1 Score for each label:\n")
+		file.write("\t\tLow: {:.2f}%\n".format(best_params["f1_score_each"][0] * 100))
+		file.write("\t\tGood: {:.2f}%\n".format(best_params["f1_score_each"][1] * 100))
+		file.write("\t\tHigh: {:.2f}%\n\n".format(best_params["f1_score_each"][2] * 100))
 	return best_params
 
 
@@ -166,23 +177,23 @@ def log_confusion_matrix(testY, y_predicted, config):
 	flow_rate_predicted_decoded, lateral_speed_predicted_decoded, z_offset_predicted_decoded, hotend_temperature_predicted_decoded = decode_labels(y_predicted)
 
 	# Plot confusion matrix
-	fig, axs = plt.subplots(2,2,figsize=(8, 5))
-	cmp1 = ConfusionMatrixDisplay(confusion_matrix(flow_rate_test_decoded, flow_rate_predicted_decoded, normalize="true"),
+	_, axs = plt.subplots(2,2,figsize=(8, 5))
+	cmp1 = ConfusionMatrixDisplay(confusion_matrix(flow_rate_test_decoded, flow_rate_predicted_decoded),
 								display_labels=["Low", "Good", "High"])
 	cmp1.plot(ax=axs[0, 0])
 	axs[0, 0].set_title('Flow Rate')
 
-	cmp2 = ConfusionMatrixDisplay(confusion_matrix(lateral_speed_test_decoded, lateral_speed_predicted_decoded, normalize="true"),
+	cmp2 = ConfusionMatrixDisplay(confusion_matrix(lateral_speed_test_decoded, lateral_speed_predicted_decoded),
 								display_labels=["Low", "Good", "High"])
 	cmp2.plot(ax=axs[0, 1])
 	axs[0, 1].set_title('Lateral Speed')
 
-	cmp3 = ConfusionMatrixDisplay(confusion_matrix(z_offset_test_decoded, z_offset_predicted_decoded, normalize="true"),
+	cmp3 = ConfusionMatrixDisplay(confusion_matrix(z_offset_test_decoded, z_offset_predicted_decoded),
 								display_labels=["Low", "Good", "High"])
 	cmp3.plot(ax=axs[1, 0])
 	axs[1, 0].set_title('Z offset')
 
-	cmp4 = ConfusionMatrixDisplay(confusion_matrix(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded, normalize="true"),
+	cmp4 = ConfusionMatrixDisplay(confusion_matrix(hotend_temperature_test_decoded, hotend_temperature_predicted_decoded),
 								display_labels=["Low", "Good", "High"])
 	cmp4.plot(ax=axs[1, 1])
 	axs[1, 1].set_title('Hotend Temperature')
@@ -227,28 +238,28 @@ def histograms(labels, config):
 	unique_z_offset, counts_z_offset = np.unique(z_offset_labels, return_counts=True, axis=0)
 	unique_hotend_temperature, counts_hotend_temperature = np.unique(hotend_temperature_labels, return_counts=True, axis=0)
 
-	plt.figure("Histograms for each label", figsize=(8, 8))
+	plt.figure("Histograms for each label", figsize=(13, 8))
 	plt.subplot(2, 2, 1)
 	plt.bar(range(len(unique_flow_rate)), counts_flow_rate)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Flow Rate")
 
 	plt.subplot(2, 2, 2)
 	plt.bar(range(len(unique_lateral_speed)), counts_lateral_speed)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Lateral Speed")
 
 	plt.subplot(2, 2, 3)
 	plt.bar(range(len(unique_z_offset)), counts_z_offset)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Z Offset")
 
 	plt.subplot(2, 2, 4)
 	plt.bar(range(len(unique_hotend_temperature)), counts_hotend_temperature)
-	plt.xticks([0, 1, 2], ['low', 'good', 'high'])
+	plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
 	plt.ylabel("Amount of samples")
 	plt.title("Hotend Temperature")
 
@@ -363,14 +374,17 @@ elif config["training"]["use_grid_search"]:
 		file.write("\nGrid search took {:.2f} seconds.\n".format(time.time() - start_time))
 else:
 	k = config["classifier"]["k_value"]
-	knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
-	knn.fit(trainX, trainY)
+	knn_all = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
+	knn_all.fit(trainX, trainY)
 
 if config["training"]["knn_all_in_one"]:
-	y_predicted_all = knn_all.predict(testX)
+	y_predicted = knn_all.predict(testX)
 	test_accuracy_all = knn_all.score(testX, testY)
+	f1_score_all = f1_score(testY, y_predicted, average=None)
+	f1_score_all = np.mean(f1_score_all)
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
-		file.write("\nTest Accuracy All classes: {:.2f}%".format(test_accuracy_all * 100))
+		file.write("\nTest Accuracy All Classes: {:.2f}%".format(test_accuracy_all * 100))
+		file.write("\nF1 Score All Classes: {:.2f}%".format(f1_score_all * 100))
 else:
 	y_predicted_flow_rate = knn_flow_rate.predict(testX)
 	y_predicted_lateral_speed = knn_lateral_speed.predict(testX)
@@ -382,19 +396,34 @@ else:
 	test_accuracy_z_offset = knn_z_offset.score(testX, testY[:, 6:9])
 	test_accuracy_hotend_temperature = knn_hotend_temperature.score(testX, testY[:, 9:])
 
+	f1_score_flow_rate = f1_score(testY[:, 0:3], y_predicted_flow_rate, average=None)
+	f1_score_flow_rate = np.mean(f1_score_flow_rate)
+	f1_score_lateral_speed = f1_score(testY[:, 3:6], y_predicted_lateral_speed, average=None)
+	f1_score_lateral_speed = np.mean(f1_score_lateral_speed)
+	f1_score_z_offset = f1_score(testY[:, 6:9], y_predicted_z_offset, average=None)
+	f1_score_z_offset = np.mean(f1_score_z_offset)
+	f1_score_hotend_temperature = f1_score(testY[:, 9:], y_predicted_hotend_temperature, average=None)
+	f1_score_hotend_temperature = np.mean(f1_score_hotend_temperature)
+
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write("\nTest accuracies:\n")
 		file.write("\tFlow Rate: {:.2f}%\n".format(test_accuracy_flow_rate * 100))
 		file.write("\tLateral Speed: {:.2f}%\n".format(test_accuracy_lateral_speed * 100))
 		file.write("\tZ Offset: {:.2f}%\n".format(test_accuracy_z_offset * 100))
 		file.write("\tHotend Temperature: {:.2f}%\n".format(test_accuracy_hotend_temperature * 100))
+		file.write("\nTest F1 scores (average values):\n")
+		file.write("\tFlow Rate: {:.2f}%\n".format(f1_score_flow_rate * 100))
+		file.write("\tLateral Speed: {:.2f}%\n".format(f1_score_lateral_speed * 100))
+		file.write("\tZ Offset: {:.2f}%\n".format(f1_score_z_offset * 100))
+		file.write("\tHotend Temperature: {:.2f}%\n".format(f1_score_hotend_temperature * 100))
 
-y_predicted = np.hstack((y_predicted_flow_rate, y_predicted_lateral_speed, y_predicted_z_offset, y_predicted_hotend_temperature))
+if not config["training"]["knn_all_in_one"]:
+	y_predicted = np.hstack((y_predicted_flow_rate, y_predicted_lateral_speed, y_predicted_z_offset, y_predicted_hotend_temperature))
 
 if config["general"]["log_classified_images"] and user == "remote_pc":
 	log_classified_samples(testX, testY, y_predicted, config)
 
-if config["general"]["log_confusion_matrix"]:
+if config["general"]["log_confusion_matrix"] and user == "remote_pc":
 	log_confusion_matrix(testY, y_predicted, config)
 
 print("End of KNN classification. Logs saved to log folder.")
