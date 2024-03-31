@@ -14,7 +14,21 @@ from tqdm import tqdm
 from datasets.custom_dataset import CustomDataset
 from preprocessing.simple_preprocessor import SimplePreprocessor
 from cnn import CNN
+from test import test_model
 
+
+def plot_learning_curve(loss_dict, plot_folder_training):
+    plt.style.use("ggplot")
+    plt.figure()
+    plt.plot(loss_dict["train_loss"], label="train_loss")
+    plt.plot(loss_dict["val_loss"], label="val_loss")
+    plt.plot(loss_dict["train_acc"], label="train_acc")
+    plt.plot(loss_dict["val_acc"], label="val_acc")
+    plt.title("Training Loss and Accuracy on Dataset")
+    plt.xlabel("Epoch #")
+    plt.ylabel("Loss/Accuracy")
+    plt.legend(loc="lower left")
+    plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
 
 config = json.load(open("config.json"))
 
@@ -97,7 +111,7 @@ criterion = loss_functions[config["cnn"]["training"]["loss_function"]]
 optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
 
 
-H = {
+loss_dict = {
 	"train_loss": [],
 	"train_acc": [],
 	"val_loss": [],
@@ -105,8 +119,8 @@ H = {
 }
 
 # Train the model
-total_step_train = len(train_loader)
-total_step_val = len(val_loader)
+total_step_train = len(train_loader.dataset)
+total_step_val = len(val_loader.dataset)
 print("Training started!")
 start_time = time.time()
 for epoch in tqdm(range(num_epochs), desc="Epochs"):
@@ -117,7 +131,7 @@ for epoch in tqdm(range(num_epochs), desc="Epochs"):
     totalValLoss = 0
     trainCorrect = 0
     valCorrect = 0
-    for train_idx, (images, labels) in tqdm(enumerate(train_loader), desc="Processing Samples"):
+    for train_idx, (images, labels) in tqdm(enumerate(train_loader), desc="Processing Samples", total=len(train_loader)):
         images = images.to(device)
         labels = labels.to(device)
 
@@ -132,70 +146,49 @@ for epoch in tqdm(range(num_epochs), desc="Epochs"):
 
         totalTrainLoss += loss.item()
         trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
-			torch.float).sum().item()
+            torch.float).sum().item()
 
         if (train_idx+1) % config["cnn"]["training"]["print_step"] == 0:
             with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
                 file.write(f"Epoch [{epoch+1}/{num_epochs}], Step [{train_idx+1}/{total_step_train}], Loss: {loss.item():.4f}\n")
 
-        if (train_idx+1) % config["cnn"]["training"]["val_step"] == 0:
-            model.eval()
-            with torch.no_grad():
-                for val_idx, (images, labels) in enumerate(val_loader):
-                    images = images.to(device)
-                    labels = labels.to(device)
+    model.eval()
+    with torch.no_grad():
+        for val_idx, (images, labels) in enumerate(val_loader):
+            images = images.to(device)
+            labels = labels.to(device)
 
-                    pred = model(images)
-                    loss = criterion(pred, labels)
+            pred = model(images)
+            loss = criterion(pred, labels)
 
-                    totalValLoss += loss.item()
-                    valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
-				        torch.float).sum().item()
+            totalValLoss += loss.item()
+            valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
+                torch.float).sum().item()
 
     avgTrainLoss = totalTrainLoss / total_step_train
     avgValLoss = totalValLoss / total_step_val
-    trainCorrect = trainCorrect / len(train_loader)
-    valCorrect = valCorrect / len(val_loader)
-    H["train_loss"].append(avgTrainLoss)
-    H["train_acc"].append(trainCorrect)
-    H["val_loss"].append(avgValLoss)
-    H["val_acc"].append(valCorrect)
+    trainCorrect = trainCorrect / total_step_train
+    valCorrect = valCorrect / total_step_val
+    loss_dict["train_loss"].append(avgTrainLoss)
+    loss_dict["train_acc"].append(trainCorrect)
+    loss_dict["val_loss"].append(avgValLoss)
+    loss_dict["val_acc"].append(valCorrect)
     with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
         file.write(f"Epoch: {epoch+1}/{num_epochs}\n")
-        file.write(f"Train loss: {avgTrainLoss:.6f}, Train accuracy: {trainCorrect:.4f}\n")
-        file.write(f"Val loss: {avgValLoss:.6f}, Val accuracy: {valCorrect:.4f}\n")
+        file.write(f"Train loss: {avgTrainLoss:.4f}, Val loss: {avgValLoss:.4f}\n")
+        file.write(f"Train accuracy: {trainCorrect:.4f}, Val accuracy: {valCorrect:.4f}\n")
         file.write(f"Time elapsed: {time.time() - start_time:.2f} seconds\n")
 
 print("Training finished!")
 
 # Test the model
-model.eval()
-with torch.no_grad():
-    correct = 0
-    for test_idx, (images, labels) in enumerate(test_loader):
-        images = images.to(device)
-        labels = labels.to(device)
-
-        pred = model(images)
-        correct += (pred.argmax(1) == labels.argmax(1)).type(
-            torch.float).sum().item()
-    
-    accuracy = correct / len(test_loader)
-    with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
-        file.write(f"Test accuracy: {accuracy * 100:.2f}%")
+test_accuracy = test_model(model, test_loader, device)
+with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
+    file.write(f"Test accuracy: {test_accuracy * 100:.2f}%")
 
 # plot the training loss and accuracy
-plt.style.use("ggplot")
-plt.figure()
-plt.plot(H["train_loss"], label="train_loss")
-plt.plot(H["val_loss"], label="val_loss")
-plt.plot(H["train_acc"], label="train_acc")
-plt.plot(H["val_acc"], label="val_acc")
-plt.title("Training Loss and Accuracy on Dataset")
-plt.xlabel("Epoch #")
-plt.ylabel("Loss/Accuracy")
-plt.legend(loc="lower left")
-plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
+plot_learning_curve(loss_dict, plot_folder_training)
 
 # save the model
-torch.save(model, os.path.join(model_folder_training, "model.pth"))
+if config["general"]["save_model"]:
+    torch.save(model, os.path.join(model_folder_training, "model.pth"))

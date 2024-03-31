@@ -20,7 +20,7 @@ class CNN(nn.Module):
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
         
-        self.fc1 = nn.Linear(in_features=32*32*32, out_features=256)
+        self.fc1 = nn.Linear(in_features=32*16*16, out_features=256)
         self.relu3 = nn.ReLU()
 
         self.fc2 = nn.Linear(256, output_size)
