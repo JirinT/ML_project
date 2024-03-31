@@ -115,3 +115,7 @@ class SimplePreprocessor:
             
         return image
     
+    def __call__(self, image):
+        
+        return self.preprocess(image)
+    

@@ -1,9 +1,10 @@
 {
-    "active_user": "remote_pc",
+    "active_user": "jan",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
+        "model_path": "./logs/models/",
         "sample_img_path": "./logs/sample_images/",
         "classified_images_path":{
             "correct": "./logs/classified_images/correct",
@@ -19,47 +20,69 @@
         },
         "log_classified_images": false,
         "log_confusion_matrix": false,
-        "log_histograms": true,
+        "log_histograms": false,
         "save_cv_plot": false,
-        "show_sample_images": true
+        "show_sample_images": false
     },
     "preprocessor": {
         "resize": {
-            "width": 32,
-            "height": 32
+            "width": 128,
+            "height": 128
         },
         "crop_size": 150,
         "setting": {
             "crop": true,
-            "resize": false,
+            "resize": true,
             "rgb2gray": false,
             "rgb2lab": false,
             "clahe": false,
             "unsharp": false
                 }
     },
-    "classifier": {
-        "k_value": 1,
-        "distance_metric": "euclidean"
-    },
-    "training": {
-        "num_samples_subset": 100000,
-        "start_idx": null,
-        "end_idx": null,
-        "test_size": 0.1,
-        "val_size": 0.2,
-        "random_state": 42,
-        "use_grid_search": false,
-        "optimizer_metric":{
-            "accuracy": false,
-            "f1": false
+    "knn": {
+        "classifier": {
+            "k_value": 1,
+            "distance_metric": "euclidean"
         },
-        "use_normalization": false,
-        "use_cross_validation": false,
-        "num_k": 1,
-        "cv_fold": 1,
-        "use_pca": false,
-        "pca_components": 0.95,
-        "knn_all_in_one": true
+        "training": {
+            "num_samples_subset": 100000,
+            "start_idx": null,
+            "end_idx": null,
+            "test_size": 0.1,
+            "val_size": 0.2,
+            "random_state": 42,
+            "use_grid_search": false,
+            "optimizer_metric":{
+                "accuracy": false,
+                "f1": false
+            },
+            "use_normalization": false,
+            "use_cross_validation": false,
+            "num_k": 1,
+            "cv_fold": 1,
+            "use_pca": false,
+            "pca_components": 0.95,
+            "knn_all_in_one": true
+        }
+    },
+    "cnn": {
+        "model": {
+            "num_classes": 3
+        },
+        "training": {
+            "batch_size": 32,
+            "num_epochs": 10,
+            "num_samples_subset": 5000,
+            "learning_rate": 0.001,
+            "loss_function": "1",
+            "optimizer": "1",
+            "print_step": 10000,
+            "shuffle": true,
+            "train_split": 0.7,
+            "val_split": 0.2,
+            "test_split": 0.1,
+            "seed": 42,
+            "val_step": 10
+        }
     }
 }
