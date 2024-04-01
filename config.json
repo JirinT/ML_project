@@ -14,7 +14,7 @@
         "histogram_path": "./logs/histograms",
         "data_paths":{
             "jan": "./caxton_dataset",
-            "leon": "test",
+            "leon": "./caxton_dataset",
             "jiri": "/Volumes/Samsung USB",
             "remote_pc": "./caxton_dataset"
         },
