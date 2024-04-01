@@ -4,6 +4,7 @@ import json
 import numpy as np
 import pandas as pd
 import torch
+import torch.utils.data as data
 
 from PIL import Image
 from torch.utils.data import Dataset
@@ -132,5 +133,22 @@ class CustomDataset(Dataset):
 
         except Exception as e:
             print("Error processing image:", e)
+            return None, None
         
         return img, label
+    
+
+    def custom_collate_fn(self, batch):
+        """
+        Custom collate function for the data loader.
+
+        Args:
+            batch (list): The batch to collate.
+
+        Returns:
+            tuple: The collated batch.
+        """
+        # Filter out samples where either the image or label is None
+        batch = [sample for sample in batch if sample[0] is not None and sample[1] is not None]
+
+        return data.default_collate(batch)
