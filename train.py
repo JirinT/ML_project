@@ -88,9 +88,9 @@ train_subset = Subset(train_set, range(num_samples_train_subset))
 val_subset = Subset(val_set, range(num_samples_val_subset))
 test_subset = Subset(test_set, range(num_samples_test_subset))
 
-train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle)
-val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle)
-test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle)
+train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
 
 # Initialize model
 model = CNN(config=config).to(device)
