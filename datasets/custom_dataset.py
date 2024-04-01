@@ -20,6 +20,8 @@ class CustomDataset(Dataset):
             self.data_frame = pd.read_csv(os.path.join(self.data_path, self.csv_file_name))
         else:
             self.data_frame = None
+            raise ImportError('No .csv was found')
+            
 
         self.num_samples = self.count_samples()
         self.transform = transform
