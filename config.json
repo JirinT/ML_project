@@ -23,7 +23,8 @@
         "log_histograms": false,
         "save_cv_plot": false,
         "save_model": false,
-        "show_sample_images": false
+        "show_sample_images": false,
+        "show_net_structure": true
     },
     "preprocessor": {
         "resize": {
@@ -72,8 +73,8 @@
         },
         "training": {
             "batch_size": 32,
-            "num_epochs": 4,
-            "num_samples_subset": 5000,
+            "num_epochs": 1,
+            "num_samples_subset": 500,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",
