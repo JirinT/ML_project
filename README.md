@@ -7,31 +7,12 @@ Repository for the ml project.
 
 Dataset link: https://www.repository.cam.ac.uk/items/6d77cd6d-8569-4bf4-9d5f-311ad2a49ac8
 
-Project stages:
-1. Find a topic/project:
-	a. Decide for classification or regression
-2. Reduce number of samples in dataset
-	a. Random approach
-	b. Prob around 100k samples
-		i. Do train, val, test split with this set
-3. Dataloading/Image Preprocessing
-	a. Crop around nozzle (240x240)
-	b. Resize the image without quality loss
-		i. Look up some strategies
-	c. Transform image to grayscale
-		- create higher contrast so the printed filament is more visible, or smth like that
-	d. Put image and label together
--> this happens during dataloading
-4. Build the KNN model
-	a. Select appropiate k
-	b. Select appropiate distance metric
-5. Evaluate KNN model
-	a. Evaluation metrics
-	b. Visualization graphs
-	c. Table for different k
-6. Optimization
-	a. Find optimal k
-		i. Cross-validation
-7. Build the CNN model
-8. Evaluate the CNN
-9. Optimize the CNN!
+Loss functions:
+1: CrossEntropyLoss
+2: MSE Loss
+3: L1 Loss
+4: NLL Loss
+
+Optimizer:
+1: Adam
+2: Stochastic Gradient Descent
