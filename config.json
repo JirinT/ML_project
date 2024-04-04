@@ -70,7 +70,12 @@
     "cnn": {
         "model": {
             "num_classes": 3,
-            "drop_out_rate": 0.3
+            "drop_out_rate": 0.3,
+            "regularization":{
+                "lambda": 0.01,
+                "l1": true,
+                "l2": false
+            }
         },
         "training": {
             "batch_size": 32,

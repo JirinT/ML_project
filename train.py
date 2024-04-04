@@ -94,6 +94,7 @@ shuffle = config["cnn"]["training"]["shuffle"]
 train_split = config["cnn"]["training"]["train_split"]
 val_split = config["cnn"]["training"]["val_split"]
 test_split = config["cnn"]["training"]["test_split"]
+lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
 
 # Initialize dataset and data loader
 transform = transforms.Compose([
@@ -213,6 +214,22 @@ for epoch in tqdm(range(num_epochs), desc="Epochs"):
         # Forward pass
         pred = model(images)
         loss = criterion(pred, labels)
+
+        if config["cnn"]["model"]["regularization"]["l1"]:
+            # L1 regularization term - LASSE
+            l1 = torch.tensor(0.)
+            for param in model.parameters():
+                l1 += torch.norm(param, p=1)
+
+            loss += lambda_regularization * l1
+        
+        if config["cnn"]["model"]["regularization"]["l2"]:
+            # L2 regularization term - RIDGE
+            l2 = torch.tensor(0.)
+            for param in model.parameters():
+                l2 += torch.norm(param, p=2)
+
+            loss += lambda_regularization * l2
 
         # Backward and optimize
         optimizer.zero_grad()
