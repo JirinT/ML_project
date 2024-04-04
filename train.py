@@ -64,6 +64,7 @@ config = json.load(open("config.json"))
 
 # Set device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Used device is: ", device)
 
 # define the active user and his data path
 user = config["active_user"]
