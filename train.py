@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from datetime import datetime
-from torch.utils.data import DataLoader, random_split, Subset
+from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
 from torchvision.transforms import transforms
 from tqdm import tqdm
 
@@ -42,6 +42,23 @@ def get_mean_std(loader):
     mean /= num_pixels
     std /= num_pixels
     return mean, std
+
+def show_histogram(loader):
+    label_counts = {0: 0, 1: 0, 2: 0}
+    for _, labels in loader:
+        for label in labels:
+            label_counts[label.argmax().item()] += 1
+
+    labels = list(label_counts.keys())
+    counts = list(label_counts.values())
+
+    plt.bar(labels, counts, color='skyblue')
+    plt.grid(True)
+    plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
+    plt.title("Z-offset")
+    plt.ylabel("Amount of samples")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{timestamp}.png"))
 
 config = json.load(open("config.json"))
 
@@ -121,9 +138,30 @@ if config["cnn"]["training"]["use_normalization"]:
     test_subset.dataset.transform = transform
     print("Normalization finished!")
 
-train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+if config["cnn"]["training"]["use_weighted_rnd_sampler"]:
+    # Calculate the class frequencies
+    label_counts = [0] * config["cnn"]["model"]["num_classes"] # [0, 0, 0] - low, good, high
+    for _, label in train_subset:
+        label_counts[label.argmax().item()] += 1 
+
+    # Calculate the weight for each sample based on its class
+    weights = []
+    for _, label in train_subset:
+        label = label.argmax().item()
+        weights.append(1.0 / label_counts[label])
+
+    # Create a WeightedRandomSampler with the calculated weights
+    sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+else:
+    sampler = None
+
+train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, sampler=sampler)
 val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
 test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+
+# Show histogram of the labels:
+if config["general"]["log_histograms"]:
+    show_histogram(train_loader)
 
 # Initialize model
 model = CNN(config=config).to(device)

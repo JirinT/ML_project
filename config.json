@@ -20,11 +20,11 @@
         },
         "log_classified_images": false,
         "log_confusion_matrix": false,
-        "log_histograms": false,
+        "log_histograms": true,
         "save_cv_plot": false,
         "save_model": false,
         "show_sample_images": false,
-        "show_net_structure": true
+        "show_net_structure": false
     },
     "preprocessor": {
         "resize": {
@@ -74,17 +74,18 @@
         "training": {
             "batch_size": 32,
             "num_epochs": 1,
-            "num_samples_subset": 100,
+            "num_samples_subset": 1000,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",
             "print_step": 10000,
-            "shuffle": true,
+            "shuffle": false,
             "train_split": 0.7,
             "val_split": 0.2,
             "test_split": 0.1,
             "seed": 42,
-            "use_normalization": true
+            "use_normalization": true,
+            "use_weighted_rnd_sampler": true
         },
         "visualization": {
             "graphviz_path": "/usr/local/bin"
