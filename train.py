@@ -31,6 +31,20 @@ def plot_learning_curve(loss_dict, plot_folder_training):
     plt.legend(loc="lower left")
     plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
 
+def get_mean_std(loader):
+    mean = 0
+    std = 0
+    num_pixels = 0
+    print("Calculating mean and std of the dataset...")
+    for images, _ in loader:
+        mean += images.mean(axis=(0, 2, 3)).sum()
+        std += images.std(axis=(0, 2, 3)).sum()
+        num_pixels += images.size(0) * images.size(2) * images.size(3)
+    print("End of calculation mean and dev!")
+    mean /= num_pixels
+    std /= num_pixels
+    return mean, std
+
 config = json.load(open("config.json"))
 
 # Set device
@@ -80,6 +94,26 @@ num_samples_val = int(val_split * len(dataset))
 num_samples_test = int(test_split * len(dataset))
 
 (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test], generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
+
+train_loader_for_normalization = DataLoader(train_set, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+
+# Get mean and std of the train set for normalization:
+mean, std = get_mean_std(train_loader_for_normalization)
+
+# include the normalization transform in the transform pipeline
+transform = transforms.Compose([
+    SimplePreprocessor(
+    width=config["preprocessor"]["resize"]["width"], 
+    height=config["preprocessor"]["resize"]["height"]
+    ),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=mean, std=std) # normalize the images
+])
+
+# Apply the transform to the datasets
+train_set.dataset.transform = transform
+val_set.dataset.transform = transform
+test_set.dataset.transform = transform
 
 num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
 num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
@@ -189,7 +223,7 @@ with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 
 # Visualize the network
 if config["general"]["show_net_structure"]:    
-    os.environ["PATH"] += os.pathsep + 'C:\\Users\leongl\\Graphviz\\bin'
+    os.environ["PATH"] += os.pathsep + config["cnn"]["visualization"]["graphviz_path"]
     dot = make_dot(model(images), params=dict(model.named_parameters()))
     dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
 
