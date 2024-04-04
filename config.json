@@ -69,7 +69,8 @@
     },
     "cnn": {
         "model": {
-            "num_classes": 3
+            "num_classes": 3,
+            "dropout_rate": 0.1
         },
         "training": {
             "batch_size": 32,
