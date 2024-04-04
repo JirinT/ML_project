@@ -47,8 +47,8 @@ def show_histogram(loader):
     label_counts = {0: 0, 1: 0, 2: 0}
     for _, labels in loader:
         for label in labels:
-            if label is not None:
-                label_counts[label.argmax().item()] += 1
+            # if label is not None:
+            label_counts[label.argmax().item()] += 1
 
     labels = list(label_counts.keys())
     counts = list(label_counts.values())
@@ -145,15 +145,15 @@ if config["cnn"]["training"]["use_weighted_rnd_sampler"]:
     # Calculate the class frequencies
     label_counts = [0] * config["cnn"]["model"]["num_classes"] # [0, 0, 0] - low, good, high
     for _, label in train_subset:
-        if label is not None:
-            label_counts[label.argmax().item()] += 1 
+        # if label is not None:
+        label_counts[label.argmax().item()] += 1 
 
     # Calculate the weight for each sample based on its class
     weights = []
     for _, label in train_subset:
-        if label is not None:
-            label = label.argmax().item()
-            weights.append(1.0 / label_counts[label])
+        # if label is not None:
+        label = label.argmax().item()
+        weights.append(1.0 / label_counts[label])
 
     # Create a WeightedRandomSampler with the calculated weights
     sampler = WeightedRandomSampler(weights, len(weights), replacement=False)
@@ -216,7 +216,7 @@ for epoch in tqdm(range(num_epochs), desc="Epochs"):
         loss = criterion(pred, labels)
 
         if config["cnn"]["model"]["regularization"]["l1"]:
-            # L1 regularization term - LASSE
+            # L1 regularization term - LASSO
             l1 = torch.tensor(0.)
             for param in model.parameters():
                 l1 += torch.norm(param, p=1)
