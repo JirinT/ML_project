@@ -73,6 +73,7 @@
         },
         "training": {
             "batch_size": 32,
+            "compute_new_mean_std": false,
             "num_epochs": 1,
             "num_samples_subset": 500,
             "learning_rate": 0.001,

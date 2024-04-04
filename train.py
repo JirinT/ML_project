@@ -31,6 +31,23 @@ def plot_learning_curve(loss_dict, plot_folder_training):
     plt.legend(loc="lower left")
     plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
 
+
+def get_mean_std(loader):
+    print("Computing mean and std...")
+    num_pixels = 0
+    mean = 0.0
+    std = 0.0
+    for images, _ in loader:
+        batch_size, num_channels, height, width = images.shape
+        num_pixels += batch_size * height * width
+        mean += images.mean(axis=(0, 2, 3)).sum()
+        std += images.std(axis=(0, 2, 3)).sum()
+
+    mean /= num_pixels
+    std /= num_pixels
+
+    return mean, std
+
 config = json.load(open("config.json"))
 
 # Set device
@@ -64,13 +81,44 @@ train_split = config["cnn"]["training"]["train_split"]
 val_split = config["cnn"]["training"]["val_split"]
 test_split = config["cnn"]["training"]["test_split"]
 
+if config["cnn"]["training"]["compute_new_mean_std"] or not os.path.exists("mean.json"):
+    transform = transforms.Compose([
+        SimplePreprocessor(
+        width=config["preprocessor"]["resize"]["width"], 
+        height=config["preprocessor"]["resize"]["height"]
+        ),
+        transforms.ToTensor()
+    ])
+
+    dataset = CustomDataset(data_path, transform=transform)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+
+    mean, std = get_mean_std(data_loader)
+
+    mean_list = mean.tolist()
+    std_list = std.tolist()
+
+    mean_std_dict = {
+        "mean": mean_list,
+        "std": std_list
+    }
+
+    with open("mean.json", "w") as file:
+        json.dump(mean_std_dict, file)
+else:
+    with open("mean.json", "r") as file:
+        mean_std_dict = json.load(file)
+        mean = torch.tensor(mean_std_dict["mean"])
+        std = torch.tensor(mean_std_dict["std"])
+
 # Initialize dataset and data loader
 transform = transforms.Compose([
     SimplePreprocessor(
-	width=config["preprocessor"]["resize"]["width"], 
-	height=config["preprocessor"]["resize"]["height"]
-	),
-    transforms.ToTensor()
+        width=config["preprocessor"]["resize"]["width"],
+        height=config["preprocessor"]["resize"]["height"]
+    ),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=mean, std=std)
 ])
 
 dataset = CustomDataset(data_path, transform=transform)
