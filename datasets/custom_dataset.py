@@ -6,7 +6,8 @@ import pandas as pd
 import torch
 import torch.utils.data as data
 
-from PIL import Image
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 from torch.utils.data import Dataset
 
 
