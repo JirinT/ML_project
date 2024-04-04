@@ -144,16 +144,18 @@ if config["cnn"]["training"]["use_weighted_rnd_sampler"]:
     # Calculate the class frequencies
     label_counts = [0] * config["cnn"]["model"]["num_classes"] # [0, 0, 0] - low, good, high
     for _, label in train_subset:
-        label_counts[label.argmax().item()] += 1 
+        if label is not None:
+            label_counts[label.argmax().item()] += 1 
 
     # Calculate the weight for each sample based on its class
     weights = []
     for _, label in train_subset:
-        label = label.argmax().item()
-        weights.append(1.0 / label_counts[label])
+        if label is not None:
+            label = label.argmax().item()
+            weights.append(1.0 / label_counts[label])
 
     # Create a WeightedRandomSampler with the calculated weights
-    sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+    sampler = WeightedRandomSampler(weights, len(weights), replacement=False)
 else:
     sampler = None
 
