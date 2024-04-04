@@ -95,7 +95,15 @@ num_samples_test = int(test_split * len(dataset))
 
 (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test], generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
 
-train_loader_for_normalization = DataLoader(train_set, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
+num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
+num_samples_test_subset = int(config["cnn"]["training"]["num_samples_subset"] * test_split)
+
+train_subset = Subset(train_set, range(num_samples_train_subset))
+val_subset = Subset(val_set, range(num_samples_val_subset))
+test_subset = Subset(test_set, range(num_samples_test_subset))
+
+train_loader_for_normalization = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
 
 # Get mean and std of the train set for normalization:
 mean, std = get_mean_std(train_loader_for_normalization)
@@ -111,17 +119,9 @@ transform = transforms.Compose([
 ])
 
 # Apply the transform to the datasets
-train_set.dataset.transform = transform
-val_set.dataset.transform = transform
-test_set.dataset.transform = transform
-
-num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
-num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
-num_samples_test_subset = int(config["cnn"]["training"]["num_samples_subset"] * test_split)
-
-train_subset = Subset(train_set, range(num_samples_train_subset))
-val_subset = Subset(val_set, range(num_samples_val_subset))
-test_subset = Subset(test_set, range(num_samples_test_subset))
+train_subset.dataset.transform = transform
+val_subset.dataset.transform = transform
+test_subset.dataset.transform = transform
 
 train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
 val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
