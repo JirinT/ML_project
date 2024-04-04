@@ -35,12 +35,10 @@ def get_mean_std(loader):
     mean = 0
     std = 0
     num_pixels = 0
-    print("Calculating mean and std of the dataset...")
     for images, _ in loader:
         mean += images.mean(axis=(0, 2, 3)).sum()
         std += images.std(axis=(0, 2, 3)).sum()
         num_pixels += images.size(0) * images.size(2) * images.size(3)
-    print("End of calculation mean and dev!")
     mean /= num_pixels
     std /= num_pixels
     return mean, std
@@ -103,25 +101,25 @@ train_subset = Subset(train_set, range(num_samples_train_subset))
 val_subset = Subset(val_set, range(num_samples_val_subset))
 test_subset = Subset(test_set, range(num_samples_test_subset))
 
-train_loader_for_normalization = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
-
-# Get mean and std of the train set for normalization:
-mean, std = get_mean_std(train_loader_for_normalization)
-
-# include the normalization transform in the transform pipeline
-transform = transforms.Compose([
-    SimplePreprocessor(
-    width=config["preprocessor"]["resize"]["width"], 
-    height=config["preprocessor"]["resize"]["height"]
-    ),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=mean, std=std) # normalize the images
-])
-
-# Apply the transform to the datasets
-train_subset.dataset.transform = transform
-val_subset.dataset.transform = transform
-test_subset.dataset.transform = transform
+if config["cnn"]["training"]["use_normalization"]:
+    print("Normalization started!")
+    train_loader_for_normalization = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+    # Get mean and std of the train set for normalization:
+    mean, std = get_mean_std(train_loader_for_normalization)
+    # include the normalization transform in the transform pipeline
+    transform = transforms.Compose([
+        SimplePreprocessor(
+        width=config["preprocessor"]["resize"]["width"], 
+        height=config["preprocessor"]["resize"]["height"]
+        ),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std) # normalize the images
+    ])
+    # Apply the transform to the datasets
+    train_subset.dataset.transform = transform
+    val_subset.dataset.transform = transform
+    test_subset.dataset.transform = transform
+    print("Normalization finished!")
 
 train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
 val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
