@@ -47,7 +47,8 @@ def show_histogram(loader):
     label_counts = {0: 0, 1: 0, 2: 0}
     for _, labels in loader:
         for label in labels:
-            label_counts[label.argmax().item()] += 1
+            if label is not None:
+                label_counts[label.argmax().item()] += 1
 
     labels = list(label_counts.keys())
     counts = list(label_counts.values())
