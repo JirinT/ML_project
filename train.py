@@ -80,45 +80,15 @@ shuffle = config["cnn"]["training"]["shuffle"]
 train_split = config["cnn"]["training"]["train_split"]
 val_split = config["cnn"]["training"]["val_split"]
 test_split = config["cnn"]["training"]["test_split"]
+num_workers = config["cnn"]["training"]["num_workers"]
 
-if config["cnn"]["training"]["compute_new_mean_std"] or not os.path.exists("mean.json"):
-    transform = transforms.Compose([
-        SimplePreprocessor(
-        width=config["preprocessor"]["resize"]["width"], 
-        height=config["preprocessor"]["resize"]["height"]
-        ),
-        transforms.ToTensor()
-    ])
 
-    dataset = CustomDataset(data_path, transform=transform)
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
-
-    mean, std = get_mean_std(data_loader)
-
-    mean_list = mean.tolist()
-    std_list = std.tolist()
-
-    mean_std_dict = {
-        "mean": mean_list,
-        "std": std_list
-    }
-
-    with open("mean.json", "w") as file:
-        json.dump(mean_std_dict, file)
-else:
-    with open("mean.json", "r") as file:
-        mean_std_dict = json.load(file)
-        mean = torch.tensor(mean_std_dict["mean"])
-        std = torch.tensor(mean_std_dict["std"])
-
-# Initialize dataset and data loader
 transform = transforms.Compose([
     SimplePreprocessor(
-        width=config["preprocessor"]["resize"]["width"],
-        height=config["preprocessor"]["resize"]["height"]
+    width=config["preprocessor"]["resize"]["width"], 
+    height=config["preprocessor"]["resize"]["height"]
     ),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=mean, std=std)
+    transforms.ToTensor()
 ])
 
 dataset = CustomDataset(data_path, transform=transform)
@@ -137,9 +107,43 @@ train_subset = Subset(train_set, range(num_samples_train_subset))
 val_subset = Subset(val_set, range(num_samples_val_subset))
 test_subset = Subset(test_set, range(num_samples_test_subset))
 
-train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
-val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
-test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+if config["cnn"]["training"]["compute_new_mean_std"] or not os.path.exists("mean.json"):
+    train_loader_for_stats = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
+
+    mean, std = get_mean_std(train_loader_for_stats)
+
+    mean_list = mean.tolist()
+    std_list = std.tolist()
+
+    mean_std_dict = {
+        "mean": mean_list,
+        "std": std_list
+    }
+
+    with open("mean.json", "w") as file:
+        json.dump(mean_std_dict, file)
+else:
+    with open("mean.json", "r") as file:
+        mean_std_dict = json.load(file)
+        mean = torch.tensor(mean_std_dict["mean"])
+        std = torch.tensor(mean_std_dict["std"])
+
+transform_with_normalization = transforms.Compose([
+    SimplePreprocessor(
+        width=config["preprocessor"]["resize"]["width"],
+        height=config["preprocessor"]["resize"]["height"]
+    ),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=mean, std=std)
+])
+
+train_subset = CustomDataset(train_subset, transform=transform_with_normalization)
+val_subset = CustomDataset(val_subset, transform=transform_with_normalization)
+test_subset = CustomDataset(test_subset, transform=transform_with_normalization)
+
+train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
+val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
+test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
 
 # Initialize model
 model = CNN(config=config).to(device)
