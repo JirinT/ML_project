@@ -154,8 +154,10 @@ if config["cnn"]["training"]["use_weighted_rnd_sampler"]:
 
     # Create a WeightedRandomSampler with the calculated weights
     sampler = WeightedRandomSampler(weights, len(weights), replacement=False)
+    shuffle = False
 else:
     sampler = None
+    shuffle = config["cnn"]["training"]["shuffle"]
 
 train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, sampler=sampler)
 val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
@@ -256,8 +258,8 @@ for epoch in tqdm(range(num_epochs), desc="Epochs"):
 
     avgTrainLoss = totalTrainLoss / total_step_train
     avgValLoss = totalValLoss / total_step_val
-    trainCorrect = trainCorrect / total_step_train
-    valCorrect = valCorrect / total_step_val
+    trainCorrect = trainCorrect / total_step_train # trainCorrect is train accuracy
+    valCorrect = valCorrect / total_step_val # valCorrect is val accuracy
     loss_dict["train_loss"].append(avgTrainLoss)
     loss_dict["train_acc"].append(trainCorrect)
     loss_dict["val_loss"].append(avgValLoss)
