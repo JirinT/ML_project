@@ -28,9 +28,10 @@ def test_model(model, test_loader, device):
         for test_idx, (images, labels) in enumerate(test_loader):
             images = images.to(device)
             labels = labels.to(device)
+            labels = labels.argmax(1)
 
             pred = model(images)
-            correct += (pred.argmax(1) == labels.argmax(1)).type(
+            correct += (pred.argmax(1) == labels).type(
             torch.float).sum().item()
         
         accuracy = correct / len(test_loader.dataset)
