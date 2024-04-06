@@ -90,6 +90,7 @@
             "val_split": 0.2,
             "test_split": 0.1,
             "seed": 42,
+            "num_workers": 4,
             "normalization": {
                 "use": true,
                 "compute_new_mean_std": true,

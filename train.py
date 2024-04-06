@@ -99,6 +99,7 @@ def train():
     val_split = config["cnn"]["training"]["val_split"]
     test_split = config["cnn"]["training"]["test_split"]
     lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
+    num_workers = config["cnn"]["training"]["num_workers"]
 
     # Initialize dataset and data loader
     transform = transforms.Compose([
@@ -131,7 +132,7 @@ def train():
         file_name = "mean_std.json"
         file_path = os.path.join(log_dir, file_name)
 
-        train_loader_for_normalization = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+        train_loader_for_normalization = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
         if config["cnn"]["training"]["normalization"]["compute_new_mean_std"] or not os.path.exists(file_path):
             mean, std = get_mean_std(train_loader_for_normalization)
 
@@ -184,9 +185,9 @@ def train():
         sampler = None
         shuffle = config["cnn"]["training"]["shuffle"]
 
-    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, sampler=sampler)
-    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
-    test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn)
+    train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, sampler=sampler, num_workers=num_workers)
+    val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
+    test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
 
     # Show histogram of the labels:
     if config["general"]["log_histograms"]:
