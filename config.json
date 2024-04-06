@@ -70,12 +70,12 @@
     "cnn": {
         "model": {
             "num_classes": 3,
-            "dropout_rate": 0.1
+            "dropout_rate": 0.4
         },
         "training": {
-            "batch_size": 32,
+            "batch_size": 64,
             "compute_new_mean_std": false,
-            "num_epochs": 20,
+            "num_epochs": 30,
             "num_samples_subset": 200000,
             "num_workers": 4,
             "learning_rate": 0.001,
@@ -86,7 +86,8 @@
             "train_split": 0.7,
             "val_split": 0.2,
             "test_split": 0.1,
-            "seed": 42
+            "seed": 42,
+            "use_normalization": false
         }
     }
 }

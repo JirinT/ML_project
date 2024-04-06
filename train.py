@@ -49,6 +49,19 @@ def get_mean_std(loader):
     return mean, std
 
 
+def create_folders_logging(config):
+    now = datetime.now()
+    now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
+    log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
+    os.makedirs(log_folder_training, exist_ok=True)
+    plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
+    os.makedirs(plot_folder_training, exist_ok=True)
+    model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
+    os.makedirs(plot_folder_training, exist_ok=True)
+
+    return log_folder_training, plot_folder_training, model_folder_training
+
+
 def train():
     config = json.load(open("config.json"))
 
@@ -60,14 +73,7 @@ def train():
     data_path = config["general"]["data_paths"][user]
 
     # create folders for logging
-    now = datetime.now()
-    now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
-    log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
-    os.makedirs(log_folder_training, exist_ok=True)
-    plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
-    os.makedirs(plot_folder_training, exist_ok=True)
-    model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
-    os.makedirs(plot_folder_training, exist_ok=True)
+    log_folder_training, plot_folder_training, model_folder_training = create_folders_logging(config)
 
     # Save the config to a text file
     filename_config = os.path.join(log_folder_training, "config.txt")
@@ -108,45 +114,45 @@ def train():
     train_subset = Subset(train_set, range(num_samples_train_subset))
     val_subset = Subset(val_set, range(num_samples_val_subset))
     test_subset = Subset(test_set, range(num_samples_test_subset))
+    if config["cnn"]["training"]["use_normalization"]:
+        if config["cnn"]["training"]["compute_new_mean_std"] or not os.path.exists("mean.json"):
+            train_loader_for_stats = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
 
-    if config["cnn"]["training"]["compute_new_mean_std"] or not os.path.exists("mean.json"):
-        train_loader_for_stats = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
+            mean, std = get_mean_std(train_loader_for_stats)
 
-        mean, std = get_mean_std(train_loader_for_stats)
+            mean_list = mean.tolist()
+            std_list = std.tolist()
 
-        mean_list = mean.tolist()
-        std_list = std.tolist()
+            mean_std_dict = {
+                "mean": mean_list,
+                "std": std_list
+            }
 
-        mean_std_dict = {
-            "mean": mean_list,
-            "std": std_list
-        }
+            with open("mean.json", "w") as file:
+                json.dump(mean_std_dict, file)
+            
+        else:
+            with open("mean.json", "r") as file:
+                mean_std_dict = json.load(file)
+                mean = torch.tensor(mean_std_dict["mean"])
+                std = torch.tensor(mean_std_dict["std"])
 
-        with open("mean.json", "w") as file:
-            json.dump(mean_std_dict, file)
-        
-    else:
-        with open("mean.json", "r") as file:
-            mean_std_dict = json.load(file)
-            mean = torch.tensor(mean_std_dict["mean"])
-            std = torch.tensor(mean_std_dict["std"])
+        transform_with_normalization = transforms.Compose([
+            SimplePreprocessor(
+                width=config["preprocessor"]["resize"]["width"],
+                height=config["preprocessor"]["resize"]["height"]
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=mean, std=std)
+        ])
 
-    transform_with_normalization = transforms.Compose([
-        SimplePreprocessor(
-            width=config["preprocessor"]["resize"]["width"],
-            height=config["preprocessor"]["resize"]["height"]
-        ),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
-    ])
+        dataset = CustomDataset(data_path, transform=transform_with_normalization)
 
-    dataset = CustomDataset(data_path, transform=transform_with_normalization)
+        (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test], generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
 
-    (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test], generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
-
-    train_subset = Subset(train_set, range(num_samples_train_subset))
-    val_subset = Subset(val_set, range(num_samples_val_subset))
-    test_subset = Subset(test_set, range(num_samples_test_subset))
+        train_subset = Subset(train_set, range(num_samples_train_subset))
+        val_subset = Subset(val_set, range(num_samples_val_subset))
+        test_subset = Subset(test_set, range(num_samples_test_subset))
 
     train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
     val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
@@ -253,6 +259,7 @@ def train():
 
     # save the model
     if config["general"]["save_model"]:
+        os.makedirs(model_folder_training, exist_ok=True)
         torch.save(model, os.path.join(model_folder_training, "model.pth"))
 
 
