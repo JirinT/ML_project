@@ -301,9 +301,11 @@ def train():
     print("Training finished!")
 
     # Test the model
+    print("Testing started!")
     test_accuracy = test_model(model, test_loader, device)
     with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
         file.write(f"Test accuracy: {test_accuracy * 100:.2f}%")
+    print("Testing finished!")
 
     # # Visualize the network
     # if config["general"]["show_net_structure"]:    
