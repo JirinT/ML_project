@@ -167,6 +167,7 @@ def train():
         print("Normalization finished!")
 
     if config["cnn"]["training"]["use_weighted_rnd_sampler"]:
+        print("WeightedRandomSampler started!")
         # Calculate the class frequencies
         label_counts = [0] * config["cnn"]["model"]["num_classes"] # [0, 0, 0] - low, good, high
         for _, label in train_subset:
@@ -181,6 +182,7 @@ def train():
         # Create a WeightedRandomSampler with the calculated weights
         sampler = WeightedRandomSampler(weights, len(weights), replacement=False)
         shuffle = False
+        print("WeightedRandomSampler finished!")
     else:
         sampler = None
         shuffle = config["cnn"]["training"]["shuffle"]
