@@ -267,6 +267,7 @@ def train():
     if config["general"]["save_model"]:
         os.makedirs(model_folder_training, exist_ok=True)
         torch.save(model, os.path.join(model_folder_training, "model.pth"))
+        print("Model saved!")
 
 
 if __name__ == "__main__":
