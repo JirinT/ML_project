@@ -1,5 +1,5 @@
 {
-    "active_user": "remote_pc",
+    "active_user": "jiri",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -80,7 +80,7 @@
         "training": {
             "batch_size": 32,
             "num_epochs": 1,
-            "num_samples_subset": 500,
+            "num_samples_subset": 1000,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",
@@ -90,8 +90,12 @@
             "val_split": 0.2,
             "test_split": 0.1,
             "seed": 42,
-            "use_normalization": true,
-            "use_weighted_rnd_sampler": true
+            "normalization": {
+                "use": true,
+                "compute_new_mean_std": true,
+                "log_path": "./logs/normalization"
+            },
+            "use_weighted_rnd_sampler": false
         },
         "visualization": {
             "graphviz_path": "/usr/local/bin"
