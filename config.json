@@ -16,7 +16,13 @@
             "jan": "./caxton_dataset",
             "leon": "./caxton_dataset",
             "jiri": "/Volumes/Samsung USB",
-            "remote_pc": "./caxton_dataset"
+            "remote_pc": "./caxton_dataset",
+            "resnet": {
+                "jan": "./caxton_dataset/resnet",
+                "leon": "./caxton_dataset/resnet",
+                "jiri": "/Volumes/Samsung USB/resnet",
+                "remote_pc": "./caxton_dataset/resnet"
+            }
         },
         "log_classified_images": false,
         "log_confusion_matrix": false,
@@ -28,10 +34,10 @@
     },
     "preprocessor": {
         "resize": {
-            "width": 64,
-            "height": 64
+            "width": 224,
+            "height": 224
         },
-        "crop_size": 150,
+        "crop_size": 224,
         "setting": {
             "crop": true,
             "resize": true,
