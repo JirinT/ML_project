@@ -1,6 +1,6 @@
 import torch.nn as nn
-
 from torch import flatten
+
 
 class CNN(nn.Module):
     def __init__(self, config):
@@ -39,6 +39,7 @@ class CNN(nn.Module):
 
         self.dropout2 = nn.Dropout(p=droupout_rate)
         self.fc2 = nn.Linear(256, output_size)
+        self.dropout2 = nn.Dropout(p=drop_rate)
         self.logSoftmax = nn.LogSoftmax(dim=1)
         
     def forward(self, x):
@@ -61,9 +62,11 @@ class CNN(nn.Module):
         x = self.dropout1(x)
         x = self.fc1(x)
         x = self.relu3(x)
+        x = self.dropout1(x)
 
         x = self.dropout2(x)
         x = self.fc2(x)
         output = self.logSoftmax(x)
+        x = self.dropout2(x)
         
         return output

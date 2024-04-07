@@ -16,11 +16,17 @@
             "jan": "./caxton_dataset",
             "leon": "./caxton_dataset",
             "jiri": "/Volumes/Samsung USB",
-            "remote_pc": "./caxton_dataset"
+            "remote_pc": "./caxton_dataset",
+            "resnet": {
+                "jan": "./caxton_dataset/resnet",
+                "leon": "./caxton_dataset/resnet",
+                "jiri": "/Volumes/Samsung USB/resnet",
+                "remote_pc": "./caxton_dataset/resnet"
+            }
         },
         "log_classified_images": false,
         "log_confusion_matrix": false,
-        "log_histograms": false,
+        "log_histograms": true,
         "save_cv_plot": false,
         "save_model": true,
         "show_sample_images": false,
@@ -78,6 +84,10 @@
             "num_epochs": 30,
             "num_samples_subset": 200000,
             "num_workers": 4,
+            "regularization":{
+                "lambda": 0.01,
+                "l1": true,
+                "l2": false
             "learning_rate": 0.001,
             "loss_function": "4",
             "optimizer": "1",
@@ -88,6 +98,10 @@
             "test_split": 0.1,
             "seed": 42,
             "use_normalization": false
-        }
+            "use_weighted_rnd_sampler": false
+        },
+        "visualization": {
+            "graphviz_path": "/usr/local/bin"
+        } 
     }
 }

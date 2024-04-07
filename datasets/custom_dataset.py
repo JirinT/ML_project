@@ -6,7 +6,9 @@ import pandas as pd
 import torch
 import torch.utils.data as data
 
-from PIL import Image
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+
 from torch.utils.data import Dataset
 
 
@@ -122,6 +124,9 @@ class CustomDataset(Dataset):
         """
         img_path = self.data_frame["img_path"][index]
 
+        if config["active_user"] == "jiri":
+            img_path = os.path.join(self.data_path, img_path)
+
         self.nozzle_coordinates(index) # nozzle coordinates as [x, y] are saved to preprocesor.coordinates
 
         try:
@@ -131,7 +136,7 @@ class CustomDataset(Dataset):
             if self.transform:
                 img = self.transform(img)
                 label = torch.tensor(label, dtype=torch.float32)
-                label = label[:3]
+                label = label[6:9]
 
         except Exception as e:
             print("Error processing image:", e)
