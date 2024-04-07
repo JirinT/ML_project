@@ -15,7 +15,7 @@ from datasets.custom_dataset import CustomDataset
 from preprocessing.simple_preprocessor import SimplePreprocessor
 from cnn import CNN
 from test import test_model
-# from torchviz import make_dot
+from torchviz import make_dot
 
 
 def plot_learning_curve(loss_dict, plot_folder_training):
@@ -307,11 +307,11 @@ def train():
         file.write(f"Test accuracy: {test_accuracy * 100:.2f}%")
     print("Testing finished!")
 
-    # # Visualize the network
-    # if config["general"]["show_net_structure"]:    
-    #     os.environ["PATH"] += os.pathsep + config["cnn"]["visualization"]["graphviz_path"]
-    #     dot = make_dot(model(images), params=dict(model.named_parameters()))
-    #     dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
+    # Visualize the network
+    if config["general"]["show_net_structure"]:    
+        os.environ["PATH"] += os.pathsep + config["cnn"]["visualization"]["graphviz_path"]
+        dot = make_dot(model(images), params=dict(model.named_parameters()))
+        dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
 
     # plot the training loss and accuracy
     plot_learning_curve(loss_dict, plot_folder_training)
