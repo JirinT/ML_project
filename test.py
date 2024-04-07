@@ -84,9 +84,7 @@ train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle)
 val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle)
 test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle)
 
-"""
-model = torch.load(os.path.join(config["general"]["model_path"], "model.pth")).to(device)
-
-accuracy = test_model(model, test_loader, device)
-print(f'Accuracy: {accuracy * 100:.2f}%')
-"""
+if __name__ == "__main__":
+    model = torch.load(os.path.join(config["general"]["model_path"], "model.pth")).to(device)
+    accuracy = test_model(model, test_loader, device)
+    print(f'Accuracy: {accuracy * 100:.2f}%')
