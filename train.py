@@ -117,8 +117,6 @@ def train():
     num_samples_test = int(test_split * len(dataset))
 
     (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test], generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
-
-    print(train_set.shape)
     
     num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
     num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
