@@ -1,13 +1,13 @@
 import json
 
-# import cv2 as cv
+import cv2 as cv
 import numpy as np
 
 with open("config.json") as f:
     config_preprocessor = json.load(f)["preprocessor"]
 
 class SimplePreprocessor:
-    def __init__(self, width, height, inter=None):
+    def __init__(self, width, height, inter=cv.INTER_LINEAR):
         # store the target image width, height, and interpolation method used when resizing
         self.width = width
         self.height = height

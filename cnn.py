@@ -39,7 +39,6 @@ class CNN(nn.Module):
 
         self.dropout2 = nn.Dropout(p=droupout_rate)
         self.fc2 = nn.Linear(256, output_size)
-        self.dropout2 = nn.Dropout(p=drop_rate)
         self.logSoftmax = nn.LogSoftmax(dim=1)
         
     def forward(self, x):

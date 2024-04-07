@@ -26,7 +26,7 @@
         },
         "log_classified_images": false,
         "log_confusion_matrix": false,
-        "log_histograms": true,
+        "log_histograms": false,
         "save_cv_plot": false,
         "save_model": true,
         "show_sample_images": false,
@@ -76,7 +76,12 @@
     "cnn": {
         "model": {
             "num_classes": 3,
-            "dropout_rate": 0.5
+            "dropout_rate": 0.5,
+            "regularization":{
+                "lambda": 0.01,
+                "l1": false,
+                "l2": false
+            }
         },
         "training": {
             "batch_size": 64,
@@ -84,10 +89,6 @@
             "num_epochs": 30,
             "num_samples_subset": 200000,
             "num_workers": 4,
-            "regularization":{
-                "lambda": 0.01,
-                "l1": true,
-                "l2": false
             "learning_rate": 0.001,
             "loss_function": "4",
             "optimizer": "1",
@@ -97,7 +98,7 @@
             "val_split": 0.2,
             "test_split": 0.1,
             "seed": 42,
-            "use_normalization": false
+            "use_normalization": false,
             "use_weighted_rnd_sampler": false
         },
         "visualization": {

@@ -102,6 +102,7 @@ def train():
     shuffle = config["cnn"]["training"]["shuffle"]
     train_split = config["cnn"]["training"]["train_split"]
     val_split = config["cnn"]["training"]["val_split"]
+    test_split = config["cnn"]["training"]["test_split"]
     num_workers = config["cnn"]["training"]["num_workers"]
     lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
 
@@ -248,7 +249,7 @@ def train():
 
             if config["cnn"]["model"]["regularization"]["l1"]:
                 # L1 regularization term - LASSO
-                l1 = torch.tensor(0.)
+                l1 = torch.tensor(0.).to(device)
                 for param in model.parameters():
                     l1 += torch.norm(param, p=1)
 
@@ -256,7 +257,7 @@ def train():
             
             if config["cnn"]["model"]["regularization"]["l2"]:
                 # L2 regularization term - RIDGE
-                l2 = torch.tensor(0.)
+                l2 = torch.tensor(0.).to(device)
                 for param in model.parameters():
                     l2 += torch.norm(param, p=2)
 
