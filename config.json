@@ -1,5 +1,5 @@
 {
-    "active_user": "jan",
+    "active_user": "jiri",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -16,22 +16,28 @@
             "jan": "./caxton_dataset",
             "leon": "./caxton_dataset",
             "jiri": "/Volumes/Samsung USB",
-            "remote_pc": "./caxton_dataset"
+            "remote_pc": "./caxton_dataset",
+            "resnet": {
+                "jan": "./caxton_dataset/resnet",
+                "leon": "./caxton_dataset/resnet",
+                "jiri": "/Volumes/Samsung USB/resnet",
+                "remote_pc": "./caxton_dataset/resnet"
+            }
         },
         "log_classified_images": false,
         "log_confusion_matrix": false,
-        "log_histograms": false,
+        "log_histograms": true,
         "save_cv_plot": false,
         "save_model": false,
         "show_sample_images": false,
-        "show_net_structure": true
+        "show_net_structure": false
     },
     "preprocessor": {
         "resize": {
-            "width": 64,
-            "height": 64
+            "width": 224,
+            "height": 224
         },
-        "crop_size": 150,
+        "crop_size": 224,
         "setting": {
             "crop": true,
             "resize": true,
@@ -69,21 +75,37 @@
     },
     "cnn": {
         "model": {
-            "num_classes": 3
+            "num_classes": 3,
+            "drop_out_rate": 0.3,
+            "regularization":{
+                "lambda": 0.01,
+                "l1": true,
+                "l2": false
+            }
         },
         "training": {
             "batch_size": 32,
             "num_epochs": 1,
-            "num_samples_subset": 500,
+            "num_samples_subset": 1000,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",
             "print_step": 10000,
-            "shuffle": true,
+            "shuffle": false,
             "train_split": 0.7,
             "val_split": 0.2,
             "test_split": 0.1,
-            "seed": 42
-        }
+            "seed": 42,
+            "num_workers": 4,
+            "normalization": {
+                "use": true,
+                "compute_new_mean_std": true,
+                "log_path": "./logs/normalization"
+            },
+            "use_weighted_rnd_sampler": false
+        },
+        "visualization": {
+            "graphviz_path": "/usr/local/bin"
+        } 
     }
 }
