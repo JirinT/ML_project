@@ -34,7 +34,7 @@
         "crop_size": 300,
         "setting": {
             "crop": true,
-            "resize": true,
+            "resize": false,
             "rgb2gray": false,
             "rgb2lab": false,
             "clahe": false,
@@ -70,7 +70,7 @@
     "cnn": {
         "model": {
             "num_classes": 3,
-            "dropout_rate": 0.4
+            "dropout_rate": 0.5
         },
         "training": {
             "batch_size": 64,

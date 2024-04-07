@@ -67,6 +67,7 @@ def train():
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Device: {device}")
 
     # define the active user and his data path
     user = config["active_user"]
@@ -93,10 +94,11 @@ def train():
 
     transform = transforms.Compose([
         SimplePreprocessor(
-        width=config["preprocessor"]["resize"]["width"], 
-        height=config["preprocessor"]["resize"]["height"]
+            width=config["preprocessor"]["resize"]["width"],
+            height=config["preprocessor"]["resize"]["height"]
         ),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Resize((config["preprocessor"]["resize"]["width"], config["preprocessor"]["resize"]["height"]))
     ])
 
     dataset = CustomDataset(data_path, transform=transform)
