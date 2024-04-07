@@ -28,9 +28,10 @@ def test_model(model, test_loader, device):
         for test_idx, (images, labels) in enumerate(test_loader):
             images = images.to(device)
             labels = labels.to(device)
+            labels = labels.argmax(1)
 
             pred = model(images)
-            correct += (pred.argmax(1) == labels.argmax(1)).type(
+            correct += (pred.argmax(1) == labels).type(
             torch.float).sum().item()
         
         accuracy = correct / len(test_loader.dataset)
@@ -83,9 +84,7 @@ train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle)
 val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=shuffle)
 test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle)
 
-"""
-model = torch.load(os.path.join(config["general"]["model_path"], "model.pth")).to(device)
-
-accuracy = test_model(model, test_loader, device)
-print(f'Accuracy: {accuracy * 100:.2f}%')
-"""
+if __name__ == "__main__":
+    model = torch.load(os.path.join(config["general"]["model_path"], "model.pth")).to(device)
+    accuracy = test_model(model, test_loader, device)
+    print(f'Accuracy: {accuracy * 100:.2f}%')

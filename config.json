@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "remote_pc",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -28,7 +28,7 @@
         "log_confusion_matrix": false,
         "log_histograms": true,
         "save_cv_plot": false,
-        "save_model": false,
+        "save_model": true,
         "show_sample_images": false,
         "show_net_structure": false
     },
@@ -37,10 +37,10 @@
             "width": 224,
             "height": 224
         },
-        "crop_size": 224,
+        "crop_size": 300,
         "setting": {
             "crop": true,
-            "resize": true,
+            "resize": false,
             "rgb2gray": false,
             "rgb2lab": false,
             "clahe": false,
@@ -76,32 +76,28 @@
     "cnn": {
         "model": {
             "num_classes": 3,
-            "drop_out_rate": 0.3,
+            "dropout_rate": 0.5
+        },
+        "training": {
+            "batch_size": 64,
+            "compute_new_mean_std": false,
+            "num_epochs": 30,
+            "num_samples_subset": 200000,
+            "num_workers": 4,
             "regularization":{
                 "lambda": 0.01,
                 "l1": true,
                 "l2": false
-            }
-        },
-        "training": {
-            "batch_size": 32,
-            "num_epochs": 1,
-            "num_samples_subset": 1000,
             "learning_rate": 0.001,
-            "loss_function": "1",
+            "loss_function": "4",
             "optimizer": "1",
-            "print_step": 10000,
-            "shuffle": false,
+            "print_step": 100000,
+            "shuffle": true,
             "train_split": 0.7,
             "val_split": 0.2,
             "test_split": 0.1,
             "seed": 42,
-            "num_workers": 4,
-            "normalization": {
-                "use": true,
-                "compute_new_mean_std": true,
-                "log_path": "./logs/normalization"
-            },
+            "use_normalization": false
             "use_weighted_rnd_sampler": false
         },
         "visualization": {

@@ -32,16 +32,32 @@ def plot_learning_curve(loss_dict, plot_folder_training):
     plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
 
 def get_mean_std(loader):
-    mean = 0
-    std = 0
+    print("Computing mean and std...")
     num_pixels = 0
+    mean = 0.0
+    std = 0.0
     for images, _ in loader:
+        batch_size, num_channels, height, width = images.shape
+        num_pixels += batch_size * height * width
         mean += images.mean(axis=(0, 2, 3)).sum()
         std += images.std(axis=(0, 2, 3)).sum()
-        num_pixels += images.size(0) * images.size(2) * images.size(3)
+
     mean /= num_pixels
     std /= num_pixels
+
     return mean, std
+
+def create_folders_logging(config):
+    now = datetime.now()
+    now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
+    log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
+    os.makedirs(log_folder_training, exist_ok=True)
+    plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
+    os.makedirs(plot_folder_training, exist_ok=True)
+    model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
+    os.makedirs(plot_folder_training, exist_ok=True)
+
+    return log_folder_training, plot_folder_training, model_folder_training
 
 def show_histogram(loader, config):
     label_counts = {0: 0, 1: 0, 2: 0}
@@ -60,17 +76,6 @@ def show_histogram(loader, config):
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{timestamp}.png"))
 
-def create_folders_for_logging(config):
-    now = datetime.now()
-    now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
-    log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
-    os.makedirs(log_folder_training, exist_ok=True)
-    plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
-    os.makedirs(plot_folder_training, exist_ok=True)
-    model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
-    os.makedirs(plot_folder_training, exist_ok=True)
-    return log_folder_training, plot_folder_training, model_folder_training
-
 def train():
     config = json.load(open("config.json"))
 
@@ -82,8 +87,8 @@ def train():
     user = config["active_user"]
     data_path = config["general"]["data_paths"][user]
 
-    # Create folders for logging
-    log_folder_training, plot_folder_training, model_folder_training = create_folders_for_logging(config)
+    # create folders for logging
+    log_folder_training, plot_folder_training, model_folder_training = create_folders_logging(config)
 
     # Save the config to a text file
     filename_config = os.path.join(log_folder_training, "config.txt")
@@ -97,17 +102,16 @@ def train():
     shuffle = config["cnn"]["training"]["shuffle"]
     train_split = config["cnn"]["training"]["train_split"]
     val_split = config["cnn"]["training"]["val_split"]
-    test_split = config["cnn"]["training"]["test_split"]
-    lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
     num_workers = config["cnn"]["training"]["num_workers"]
+    lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
 
-    # Initialize dataset and data loader
     transform = transforms.Compose([
         SimplePreprocessor(
-        width=config["preprocessor"]["resize"]["width"], 
-        height=config["preprocessor"]["resize"]["height"]
+            width=config["preprocessor"]["resize"]["width"],
+            height=config["preprocessor"]["resize"]["height"]
         ),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Resize((config["preprocessor"]["resize"]["width"], config["preprocessor"]["resize"]["height"]))
     ])
 
     dataset = CustomDataset(data_path, transform=transform)
@@ -117,7 +121,7 @@ def train():
     num_samples_test = int(test_split * len(dataset))
 
     (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test], generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
-    
+
     num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
     num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
     num_samples_test_subset = int(config["cnn"]["training"]["num_samples_subset"] * test_split)
@@ -126,46 +130,45 @@ def train():
     val_subset = Subset(val_set, range(num_samples_val_subset))
     test_subset = Subset(test_set, range(num_samples_test_subset))
 
-    if config["cnn"]["training"]["normalization"]["use"]:
-        print("Normalization started!")
-        log_dir = config["cnn"]["training"]["normalization"]["log_path"]
-        file_name = "mean_std.json"
-        file_path = os.path.join(log_dir, file_name)
+    if config["cnn"]["training"]["use_normalization"]:
+        print("Normalization started.")
+        if config["cnn"]["training"]["compute_new_mean_std"] or not os.path.exists("mean.json"):
+            train_loader_for_stats = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
 
-        train_loader_for_normalization = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
-        if config["cnn"]["training"]["normalization"]["compute_new_mean_std"] or not os.path.exists(file_path):
-            mean, std = get_mean_std(train_loader_for_normalization)
+            mean, std = get_mean_std(train_loader_for_stats)
+
+            mean_list = mean.tolist()
+            std_list = std.tolist()
 
             mean_std_dict = {
-                "mean": mean.tolist(),
-                "std": std.tolist()
+                "mean": mean_list,
+                "std": std_list
             }
 
-            os.makedirs(log_dir, exist_ok=True) # Check if the directory exists and create it if it doesn't
-            with open (file_path, "w+") as file: # Save the mean and std to a file
+            with open("mean.json", "w") as file:
                 json.dump(mean_std_dict, file)
-
+            
         else:
-            with open(file_path, "r") as file:
+            with open("mean.json", "r") as file:
                 mean_std_dict = json.load(file)
-                mean = mean_std_dict["mean"]
-                std = mean_std_dict["std"]
+                mean = torch.tensor(mean_std_dict["mean"])
+                std = torch.tensor(mean_std_dict["std"])
 
-        # include the normalization transform in the transform pipeline
-        transform = transforms.Compose([
+        transform_with_normalization = transforms.Compose([
             SimplePreprocessor(
-            width=config["preprocessor"]["resize"]["width"], 
-            height=config["preprocessor"]["resize"]["height"]
+                width=config["preprocessor"]["resize"]["width"],
+                height=config["preprocessor"]["resize"]["height"]
             ),
             transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std) # normalize the images
+            transforms.Resize((config["preprocessor"]["resize"]["width"], config["preprocessor"]["resize"]["height"])),
+            transforms.Normalize(mean=mean, std=std)
         ])
-        # Apply the transform to the datasets
-        train_subset.dataset.transform = transform
-        val_subset.dataset.transform = transform
-        test_subset.dataset.transform = transform
-        print("Normalization finished!")
+        print("Normalization finished.")
 
+        train_subset.dataset.transform = transform_with_normalization
+        val_subset.dataset.transform = transform_with_normalization
+        test_subset.dataset.transform = transform_with_normalization
+        
     if config["cnn"]["training"]["use_weighted_rnd_sampler"]:
         print("WeightedRandomSampler started!")
         # Calculate the class frequencies
@@ -181,7 +184,7 @@ def train():
 
         # Create a WeightedRandomSampler with the calculated weights
         sampler = WeightedRandomSampler(weights, len(weights), replacement=False)
-        shuffle = False
+        shuffle = False   # shuffle already inside sampler
         print("WeightedRandomSampler finished!")
     else:
         sampler = None
@@ -237,6 +240,7 @@ def train():
         for train_idx, (images, labels) in tqdm(enumerate(train_loader), desc="Processing Samples", total=len(train_loader)):
             images = images.to(device)
             labels = labels.to(device)
+            labels = labels.argmax(1)
 
             # Forward pass
             pred = model(images)
@@ -264,7 +268,7 @@ def train():
             optimizer.step()
 
             totalTrainLoss += loss.item()
-            trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
+            trainCorrect += (pred.argmax(1) == labels).type(
                 torch.float).sum().item()
 
             if (train_idx+1) % config["cnn"]["training"]["print_step"] == 0:
@@ -276,18 +280,21 @@ def train():
             for val_idx, (images, labels) in enumerate(val_loader):
                 images = images.to(device)
                 labels = labels.to(device)
+                labels = labels.argmax(1)
+
 
                 pred = model(images)
                 loss = criterion(pred, labels)
 
                 totalValLoss += loss.item()
-                valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
+                valCorrect += (pred.argmax(1) == labels).type(
                     torch.float).sum().item()
 
         avgTrainLoss = totalTrainLoss / total_step_train
         avgValLoss = totalValLoss / total_step_val
-        trainCorrect = trainCorrect / total_step_train # trainCorrect is train accuracy
-        valCorrect = valCorrect / total_step_val # valCorrect is val accuracy
+        trainCorrect = trainCorrect / total_step_train
+        valCorrect = valCorrect / total_step_val
+
         loss_dict["train_loss"].append(avgTrainLoss)
         loss_dict["train_acc"].append(trainCorrect)
         loss_dict["val_loss"].append(avgValLoss)
@@ -301,7 +308,6 @@ def train():
     print("Training finished!")
 
     # Test the model
-    print("Testing started!")
     test_accuracy = test_model(model, test_loader, device)
     with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
         file.write(f"Test accuracy: {test_accuracy * 100:.2f}%")
@@ -309,7 +315,7 @@ def train():
 
     # Visualize the network
     if config["general"]["show_net_structure"]:    
-        os.environ["PATH"] += os.pathsep + config["cnn"]["visualization"]["graphviz_path"]
+        os.environ["PATH"] += os.pathsep + './packages/graphviz/bin/'
         dot = make_dot(model(images), params=dict(model.named_parameters()))
         dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
 
@@ -318,7 +324,9 @@ def train():
 
     # save the model
     if config["general"]["save_model"]:
+        os.makedirs(model_folder_training, exist_ok=True)
         torch.save(model, os.path.join(model_folder_training, "model.pth"))
+        print("Model saved!")
 
 if __name__ == "__main__":
     train()
