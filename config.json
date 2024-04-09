@@ -16,21 +16,15 @@
             "jan": "./caxton_dataset",
             "leon": "./caxton_dataset",
             "jiri": "/Volumes/Samsung USB",
-            "remote_pc": "./caxton_dataset",
-            "resnet": {
-                "jan": "./caxton_dataset/resnet",
-                "leon": "./caxton_dataset/resnet",
-                "jiri": "/Volumes/Samsung USB/resnet",
-                "remote_pc": "./caxton_dataset/resnet"
-            }
+            "remote_pc": "./caxton_dataset"
         },
         "log_classified_images": false,
         "log_confusion_matrix": false,
         "log_histograms": true,
         "save_cv_plot": false,
-        "save_model": false,
+        "save_model": true,
         "show_sample_images": false,
-        "show_net_structure": false
+        "show_net_structure": true
     },
     "preprocessor": {
         "resize": {
@@ -75,31 +69,37 @@
     },
     "cnn": {
         "model": {
-            "num_classes": 3,
+            "type": {
+                "simple_cnn": false,
+                "resnet18": true,
+                "resnet34": false
+            },
+            "num_classes": 12,
             "drop_out_rate": 0.3,
             "regularization":{
+                "use": false,
                 "lambda": 0.01,
-                "l1": true,
-                "l2": false
+                "lasso": false,
+                "ridge": false
             }
         },
         "training": {
-            "batch_size": 32,
+            "batch_size": 16,
             "num_epochs": 1,
-            "num_samples_subset": 1000,
+            "num_samples_subset": 50,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",
             "print_step": 10000,
-            "shuffle": false,
-            "train_split": 0.7,
-            "val_split": 0.2,
+            "shuffle": true,
+            "train_split": 0.8,
+            "val_split": 0.1,
             "test_split": 0.1,
             "seed": 42,
             "num_workers": 4,
             "normalization": {
                 "use": true,
-                "compute_new_mean_std": true,
+                "compute_new_mean_std": false,
                 "log_path": "./logs/normalization"
             },
             "use_weighted_rnd_sampler": false

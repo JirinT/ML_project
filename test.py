@@ -25,10 +25,9 @@ def test_model(model, test_loader, device):
     model.eval()
     with torch.no_grad():
         correct = 0
-        for test_idx, (images, labels) in enumerate(test_loader):
+        for (images, labels) in test_loader:
             images = images.to(device)
             labels = labels.to(device)
-
             pred = model(images)
             correct += (pred.argmax(1) == labels.argmax(1)).type(
             torch.float).sum().item()
