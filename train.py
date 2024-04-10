@@ -164,9 +164,6 @@ def train():
 
             # Forward pass
             pred = model(images)
-            intermediate_outputs = backbone_last_layer(images)
-            print(intermediate_outputs['AdaptiveAvgPool2d(output_size=(1, 1))'].shape) # shape = (batch_size, 512, 1, 1)
-
             loss = criterion(pred, labels) # calculate the loss - MAKE NEW LOSS FOR MULTIHEAD!!!!
 
             if config["cnn"]["model"]["regularization"]["use"]:
