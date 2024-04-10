@@ -71,9 +71,11 @@
         "model": {
             "type": {
                 "simple_cnn": false,
-                "resnet18": true,
-                "resnet34": false
+                "resnet18": false,
+                "resnet34": false,
+                "multihead": true
             },
+            "num_heads": 4,
             "num_classes": 12,
             "drop_out_rate": 0.3,
             "regularization":{
@@ -106,6 +108,6 @@
         },
         "visualization": {
             "graphviz_path": "/usr/local/bin"
-        } 
+        }
     }
 }
