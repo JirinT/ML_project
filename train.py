@@ -164,8 +164,11 @@ def train():
 
             # Forward pass
             pred = model(images)
-            intermediate_outputs = model2(images)
-            print(intermediate_outputs['AdaptiveAvgPool2d(output_size=(1, 1))'].shape)
+            # intermediate_outputs = model2(images)
+            # print(intermediate_outputs['AdaptiveAvgPool2d(output_size=(1, 1))'].shape)
+            # print(intermediate_outputs.shape)
+            print(pred.shape)
+            print(labels.shape)
             loss = criterion(pred, labels)
 
             if config["cnn"]["model"]["regularization"]["use"]:
@@ -320,6 +323,8 @@ if __name__ == "__main__":
     "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
     }
     model2 = create_feature_extractor(model, return_nodes=return_nodes)
+    # model2 = model
+    # model2.fc = nn.Identity()
 
     # Define loss function and optimizer
     loss_functions = {
