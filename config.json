@@ -76,7 +76,7 @@
                 "multihead": true
             },
             "num_heads": 4,
-            "num_classes": 12,
+            "num_classes": 3,
             "drop_out_rate": 0.3,
             "regularization":{
                 "use": false,
