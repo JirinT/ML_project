@@ -35,4 +35,4 @@ class MultiHeadNetwork(nn.Module):
         x3 = self.heads[2](x)
         x4 = self.heads[3](x)
 
-        return [x1, x2, x3, x4]
+        return x1, x2, x3, x4
