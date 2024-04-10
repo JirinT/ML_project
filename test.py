@@ -28,9 +28,21 @@ def test_model(model, test_loader, device):
         for (images, labels) in test_loader:
             images = images.to(device)
             labels = labels.to(device)
-            pred = model(images)
-            correct += (pred.argmax(1) == labels.argmax(1)).type(
-            torch.float).sum().item()
+
+            if config["cnn"]["model"]["type"]["multihead"]:
+                x1, x2, x3, x4 = model(images)
+            else:
+                pred = model(images)
+                
+            if config["cnn"]["model"]["type"]["multihead"]:
+                correct += (x1.argmax(1) == labels[:,:3].argmax(1)).type(
+                torch.float).sum().item() + (x2.argmax(1) == labels[:,3:6].argmax(1)).type(
+                torch.float).sum().item() + (x3.argmax(1) == labels[:,6:9].argmax(1)).type(
+                torch.float).sum().item() + (x4.argmax(1) == labels[:,9:].argmax(1)).type(
+                torch.float).sum().item()
+            else:
+                correct += (pred.argmax(1) == labels.argmax(1)).type(
+                torch.float).sum().item()
         
         accuracy = correct / len(test_loader.dataset)
 

@@ -175,6 +175,7 @@ def train():
                 pred = model(images)
                 loss = criterion(pred, labels) # calculate the loss for the current batch
 
+            # Regularization
             if config["cnn"]["model"]["regularization"]["use"]:
                 if config["cnn"]["model"]["regularization"]["lasso"]:
                     p = 1
@@ -210,11 +211,36 @@ def train():
                 images = images.to(device)
                 labels = labels.to(device)
 
-                pred = model(images)
-                loss = criterion(pred, labels)
+                # Forward pass
+                if config["cnn"]["model"]["type"]["multihead"]:
+                    x1, x2, x3, x4 = model(images)
+                    # losses for each head:
+                    loss_1 = criterion(x1, labels[:,:3])
+                    loss_2 = criterion(x2, labels[:,3:6])
+                    loss_3 = criterion(x3, labels[:,6:9])
+                    loss_4 = criterion(x4, labels[:,9:])
+                    loss = loss_1 + loss_2 + loss_3 + loss_4 # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                else:
+                    pred = model(images)
+                    loss = criterion(pred, labels) # calculate the loss for the current batch
 
-                totalValLoss += loss.item()
-                valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
+                if config["cnn"]["model"]["regularization"]["use"]:
+                    if config["cnn"]["model"]["regularization"]["lasso"]:
+                        p = 1
+                    elif config["cnn"]["model"]["regularization"]["ridge"]:
+                        p = 2
+
+                    loss = apply_regularization(model, loss, lambda_regularization, p=p)
+
+                totalTrainLoss += loss.item()
+                if config["cnn"]["model"]["type"]["multihead"]:
+                    trainCorrect += (x1.argmax(1) == labels[:,:3].argmax(1)).type(
+                    torch.float).sum().item() + (x2.argmax(1) == labels[:,3:6].argmax(1)).type(
+                    torch.float).sum().item() + (x3.argmax(1) == labels[:,6:9].argmax(1)).type(
+                    torch.float).sum().item() + (x4.argmax(1) == labels[:,9:].argmax(1)).type(
+                    torch.float).sum().item()
+                else:
+                    trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                     torch.float).sum().item()
 
         avgTrainLoss = totalTrainLoss / total_step_train
