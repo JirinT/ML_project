@@ -191,6 +191,8 @@ def train():
 
             totalTrainLoss += loss.item()
             if config["cnn"]["model"]["type"]["multihead"]:
+                # THIS IS WRONG, NEEDS TO BE CHANGED TO WORK WITH MULTIHEAD PROPERLY
+                # AND THE WHOLE EVALUATION OF ACCURACY NEEDS TO BE CHANGED
                 trainCorrect += (x1.argmax(1) == labels[:,:3].argmax(1)).type(
                 torch.float).sum().item() + (x2.argmax(1) == labels[:,3:6].argmax(1)).type(
                 torch.float).sum().item() + (x3.argmax(1) == labels[:,6:9].argmax(1)).type(
