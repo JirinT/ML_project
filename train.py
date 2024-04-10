@@ -7,21 +7,20 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-from datetime import datetime
-from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
-from torchvision.transforms import transforms
-from tqdm import tqdm
-from torchvision import models
-from torchvision.models.feature_extraction import create_feature_extractor
-
-from datasets.custom_dataset import CustomDataset
-from preprocessing.simple_preprocessor import SimplePreprocessor
 from cnn import CNN
+from tqdm import tqdm
 from test import test_model
 from torchviz import make_dot
-import json
-import os
+from datetime import datetime
+from torchvision import models
 from torch.utils.data import DataLoader
+
+from MultiHeadNetwork import MultiHeadNetwork
+from torchvision.transforms import transforms
+from datasets.custom_dataset import CustomDataset
+from preprocessing.simple_preprocessor import SimplePreprocessor
+from torchvision.models.feature_extraction import create_feature_extractor
+from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
 
 
 def plot_learning_curve(loss_dict, plot_folder_training):
@@ -151,25 +150,24 @@ def train():
     best_acc = -1 # yea minus one
     start_time = time.time()
     for epoch in tqdm(range(num_epochs), desc="Epochs"):
-        # set model to train mode
-        model.train()
+
+        model.train() # set model to train mode
 
         totalTrainLoss = 0
         totalValLoss = 0
         trainCorrect = 0
         valCorrect = 0
+
         for train_idx, (images, labels) in tqdm(enumerate(train_loader), desc="Processing Samples", total=len(train_loader)):
             images = images.to(device)
             labels = labels.to(device)
 
             # Forward pass
             pred = model(images)
-            # intermediate_outputs = model2(images)
-            # print(intermediate_outputs['AdaptiveAvgPool2d(output_size=(1, 1))'].shape)
-            # print(intermediate_outputs.shape)
-            print(pred.shape)
-            print(labels.shape)
-            loss = criterion(pred, labels)
+            intermediate_outputs = backbone_last_layer(images)
+            print(intermediate_outputs['AdaptiveAvgPool2d(output_size=(1, 1))'].shape) # shape = (batch_size, 512, 1, 1)
+
+            loss = criterion(pred, labels) # calculate the loss - MAKE NEW LOSS FOR MULTIHEAD!!!!
 
             if config["cnn"]["model"]["regularization"]["use"]:
                 if config["cnn"]["model"]["regularization"]["lasso"]:
@@ -313,18 +311,21 @@ if __name__ == "__main__":
     print("Initializing model...")
     if config["cnn"]["model"]["type"]["simple_cnn"]:
         model = CNN(config=config).to(device)
+
     elif config["cnn"]["model"]["type"]["resnet18"]:
         model = models.resnet18(weights=None, num_classes=num_classes).to(device)
+
     elif config["cnn"]["model"]["type"]["resnet34"]:
-        model = models.resnet34(weights=None, num_classes=num_classes).to(device)
-    
-    # feature extraction - getting the output layer after convolution layers:
-    return_nodes = {
-    "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
-    }
-    model2 = create_feature_extractor(model, return_nodes=return_nodes)
-    # model2 = model
-    # model2.fc = nn.Identity()
+        model = models.resnet34(weights=None, num_classes=num_classes).to(device) 
+
+    elif config["cnn"]["model"]["type"]["multihead"]:
+        shared_backbone = models.resnet18(weights=None, num_classes=num_classes)
+        # feature extraction - getting the output layer after convolution layers:
+        return_nodes = {
+        "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
+        }
+        backbone_last_layer = create_feature_extractor(shared_backbone, return_nodes=return_nodes) # the backbone_last_layer is the output of the last convolutional layer which we feed into each head
+        model = MultiHeadNetwork(config, backbone_last_layer).to(device)
 
     # Define loss function and optimizer
     loss_functions = {
