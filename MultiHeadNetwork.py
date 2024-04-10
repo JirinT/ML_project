@@ -1,19 +1,17 @@
 import torch.nn as nn
-from torch import flatten
+from torchvision.models.feature_extraction import create_feature_extractor
 
 class MultiHeadNetwork(nn.Module):
-    def __init__(self, config, shared_backbone):
+    def __init__(self, config, backbone_last_layer):
         super().__init__()
 
         # shared layers:
-        self.shared_layers = shared_backbone
-
+        self.shared_layers = backbone_last_layer
         # number of heads:
-        self.num_heads = config["cnn"]["num_heads"]
-
+        self.num_heads = config["cnn"]["model"]["num_heads"]
         # define head layers:
-        self.heads = nn.ModuleList([self.output_head_nn(self.shared_layers.fc.in_features, config["cnn"]["model"]["num_classes"]) for _ in range(self.num_heads)])
-
+        # the input_size is the output of last resnet layer, for resnet18 and resnet32 it is 512, for resnet 50 its 2048
+        self.heads = nn.ModuleList([self.output_head_nn(input_size=512, output_size=config["cnn"]["model"]["num_classes"]) for _ in range(self.num_heads)])
 
     def output_head_nn(self, input_size, output_size):
         head = nn.Sequential(
@@ -22,7 +20,6 @@ class MultiHeadNetwork(nn.Module):
             nn.Linear(input_size//2, output_size),
             nn.LogSoftmax(dim=1)
         )
-
         return head
     
     def forward(self, x):
