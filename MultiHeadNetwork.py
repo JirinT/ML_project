@@ -17,7 +17,7 @@ class MultiHeadNetwork(nn.Module):
         head = nn.Sequential(
             nn.Linear(input_size, input_size//2),
             nn.ReLU(),
-            nn.Linear(input_size//2, output_size),
+            nn.Linear(input_size//2, output_size), # output_size must be set to 3 in config if we use this model for classification
             nn.LogSoftmax(dim=1)
         )
         return head
@@ -35,4 +35,4 @@ class MultiHeadNetwork(nn.Module):
         x3 = self.heads[2](x)
         x4 = self.heads[3](x)
 
-        return x1, x2, x3, x4
+        return [x1, x2, x3, x4]
