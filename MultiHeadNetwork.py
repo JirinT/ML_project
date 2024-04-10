@@ -26,6 +26,9 @@ class MultiHeadNetwork(nn.Module):
         # first pass through shared layers:
         x = self.shared_layers(x)
 
+        x = x['AdaptiveAvgPool2d(output_size=(1, 1))'] # shape = (batch_size, 512, 1, 1)
+        x = x.squeeze() # shape = (batch_size, 512)
+
         # pass through each head:
         x1 = self.heads[0](x)
         x2 = self.heads[1](x)
