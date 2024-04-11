@@ -3,6 +3,7 @@ import json
 import copy
 import time
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
@@ -155,22 +156,27 @@ def train():
 
         totalTrainLoss = 0
         totalValLoss = 0
-        trainCorrect = 0
-        valCorrect = 0
+        trainCorrect = 0 # trainCorrect is the number of correctly predicted samples in total
+        valCorrect = 0 # valCorrect is the number of correctly predicted samples in total
+        trainCorrect_list = [0, 0, 0, 0] # trainCorrect_list is the number of correctly predicted samples for each head
+        valCorrect_list = [0, 0, 0, 0] # valCorrect_list is the number of correctly predicted samples for each head
+        heads_train_acc = [0, 0, 0, 0] # heads_train_acc is the accuracy for each head
+        heads_val_acc = [0, 0, 0, 0] # heads_val_acc is the accuracy for each head
 
         for train_idx, (images, labels) in tqdm(enumerate(train_loader), desc="Processing Samples", total=len(train_loader)):
             images = images.to(device)
             labels = labels.to(device)
-
             # Forward pass
             if config["cnn"]["model"]["type"]["multihead"]:
                 x1, x2, x3, x4 = model(images)
+                pred_heads = [x1, x2, x3, x4]
                 # losses for each head:
                 loss_1 = criterion(x1, labels[:,:3])
                 loss_2 = criterion(x2, labels[:,3:6])
                 loss_3 = criterion(x3, labels[:,6:9])
                 loss_4 = criterion(x4, labels[:,9:])
-                loss = loss_1 + loss_2 + loss_3 + loss_4 # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                losses = torch.stack([loss_1, loss_2, loss_3, loss_4])
+                loss = torch.mean(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
             else:
                 pred = model(images)
                 loss = criterion(pred, labels) # calculate the loss for the current batch
@@ -191,13 +197,9 @@ def train():
 
             totalTrainLoss += loss.item()
             if config["cnn"]["model"]["type"]["multihead"]:
-                # THIS IS WRONG, NEEDS TO BE CHANGED TO WORK WITH MULTIHEAD PROPERLY
-                # AND THE WHOLE EVALUATION OF ACCURACY NEEDS TO BE CHANGED
-                trainCorrect += (x1.argmax(1) == labels[:,:3].argmax(1)).type(
-                torch.float).sum().item() + (x2.argmax(1) == labels[:,3:6].argmax(1)).type(
-                torch.float).sum().item() + (x3.argmax(1) == labels[:,6:9].argmax(1)).type(
-                torch.float).sum().item() + (x4.argmax(1) == labels[:,9:].argmax(1)).type(
-                torch.float).sum().item()
+                for i in range(len(trainCorrect_list)):
+                    trainCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
+
             else:
                 trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                 torch.float).sum().item()
@@ -216,12 +218,14 @@ def train():
                 # Forward pass
                 if config["cnn"]["model"]["type"]["multihead"]:
                     x1, x2, x3, x4 = model(images)
+                    pred_heads = [x1, x2, x3, x4]
                     # losses for each head:
                     loss_1 = criterion(x1, labels[:,:3])
                     loss_2 = criterion(x2, labels[:,3:6])
                     loss_3 = criterion(x3, labels[:,6:9])
                     loss_4 = criterion(x4, labels[:,9:])
-                    loss = loss_1 + loss_2 + loss_3 + loss_4 # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                    losses = torch.stack([loss_1, loss_2, loss_3, loss_4])
+                    loss = torch.mean(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
                 else:
                     pred = model(images)
                     loss = criterion(pred, labels) # calculate the loss for the current batch
@@ -234,41 +238,56 @@ def train():
 
                     loss = apply_regularization(model, loss, lambda_regularization, p=p)
 
-                totalTrainLoss += loss.item()
+                totalValLoss += loss.item()
                 if config["cnn"]["model"]["type"]["multihead"]:
-                    trainCorrect += (x1.argmax(1) == labels[:,:3].argmax(1)).type(
-                    torch.float).sum().item() + (x2.argmax(1) == labels[:,3:6].argmax(1)).type(
-                    torch.float).sum().item() + (x3.argmax(1) == labels[:,6:9].argmax(1)).type(
-                    torch.float).sum().item() + (x4.argmax(1) == labels[:,9:].argmax(1)).type(
-                    torch.float).sum().item()
+                    for i in range(len(valCorrect_list)):
+                        valCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
                 else:
                     trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                     torch.float).sum().item()
 
         avgTrainLoss = totalTrainLoss / total_step_train
         avgValLoss = totalValLoss / total_step_val
-        trainCorrect = trainCorrect / total_step_train # trainCorrect is train accuracy
-        valCorrect = valCorrect / total_step_val # valCorrect is val accuracy
+        if config["cnn"]["model"]["type"]["multihead"]:
+            trainCorrect_total = sum(trainCorrect_list) # trainCorrect_total is sum of correctly predicted samples for all 4 heads
+            valCorrect_total = sum(valCorrect_list) # valCorrect_total is sum of correctly predicted samples for all 4 heads
+            # train accuracies:
+            train_acc = trainCorrect_total / (total_step_train*4) # train_acc is the overall accuracy predicting all 4 heads
+            # train accuracies for each head:
+            for i in range(len(trainCorrect_list)):
+                heads_train_acc[i] = trainCorrect_list[i] / total_step_train
 
-        if valCorrect > best_acc:
+            # val accuracies:
+            val_acc = valCorrect_total / (total_step_val*4) # val_acc is the overall accuracy predicting all 4 heads
+            # val accuracies for each head:
+            for i in range(len(valCorrect_list)):
+                heads_val_acc[i] = valCorrect_list[i] / total_step_val
+
+        else:
+            train_acc = trainCorrect / total_step_train
+            val_acc = valCorrect / total_step_val
+
+        if val_acc > best_acc:
             best_acc = valCorrect
             best_model = copy.deepcopy(model)
 
         # Logs
         loss_dict["train_loss"].append(avgTrainLoss)
-        loss_dict["train_acc"].append(trainCorrect)
+        loss_dict["train_acc"].append(train_acc)
         loss_dict["val_loss"].append(avgValLoss)
-        loss_dict["val_acc"].append(valCorrect)
+        loss_dict["val_acc"].append(val_acc)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"Epoch: {epoch+1}/{num_epochs}\n")
             file.write(f"\tTrain loss: {avgTrainLoss:.4f}, Val loss: {avgValLoss:.4f}\n")
-            file.write(f"\tTrain accuracy: {trainCorrect:.4f}, Val accuracy: {valCorrect:.4f}\n")
+            file.write(f"\tTrain accuracy: {train_acc:.4f}, Val accuracy: {val_acc:.4f}\n")
+            if config["cnn"]["model"]["type"]["multihead"]:
+                for i in range(len(heads_train_acc)):
+                    file.write(f"\t\tTrain accuracy head {i+1}: {heads_train_acc[i]:.4f}, Val accuracy head {i+1}: {heads_val_acc[i]:.4f}\n")
             file.write(f"\tTime elapsed: {time.time() - start_time:.2f} seconds\n")
 
     return best_model
 
-
-# --------------------------------------------------------------
+# ------------------------- MAIN -------------------------------
 if __name__ == "__main__":
     config = json.load(open("config.json"))
 
@@ -315,7 +334,8 @@ if __name__ == "__main__":
     num_samples_val = int(val_split * len(dataset))
     num_samples_test = int(test_split * len(dataset))
 
-    (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test], generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
+    (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test],
+                                       generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
 
     num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
     num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
@@ -400,9 +420,16 @@ if __name__ == "__main__":
 
     # Test the model
     print("Testing started...")
-    test_accuracy = test_model(best_model, test_loader, device)
-    with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
-        file.write(f"Test accuracy: {test_accuracy * 100:.2f}%")
+    if config["cnn"]["model"]["type"]["multihead"]:
+        test_accuracy, heads_test_acc = test_model(best_model, test_loader, device)
+        with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
+            file.write(f"\tTest accuracy: {test_accuracy * 100:.2f}%\n")
+            for i in range(len(heads_test_acc)):
+                file.write(f"\t\tTest accuracy head {i+1}: {heads_test_acc[i] * 100:.2f}%\n")
+    else:
+        test_accuracy = test_model(best_model, test_loader, device)
+        with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
+            file.write(f"\tTest accuracy: {test_accuracy * 100:.2f}%")
 
     # Visualize the network
     if config["general"]["show_net_structure"]:    

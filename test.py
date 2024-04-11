@@ -21,32 +21,35 @@ def test_model(model, test_loader, device):
     Returns:
         float: The accuracy of the model on the test dataset.
     """
-
+    correct_list = [0, 0, 0, 0]
+    heads_train_acc = [0, 0, 0, 0]
+    correct = 0
     model.eval()
     with torch.no_grad():
-        correct = 0
         for (images, labels) in test_loader:
             images = images.to(device)
             labels = labels.to(device)
 
             if config["cnn"]["model"]["type"]["multihead"]:
                 x1, x2, x3, x4 = model(images)
+                pred_heads = [x1, x2, x3, x4]
+                for i in range(len(pred_heads)):
+                    correct_list[i] += (pred_heads[i].argmax(1) == labels[:,i*3:(i+1)*3].argmax(1)).type(torch.float).sum().item()
             else:
                 pred = model(images)
-                
-            if config["cnn"]["model"]["type"]["multihead"]:
-                correct += (x1.argmax(1) == labels[:,:3].argmax(1)).type(
-                torch.float).sum().item() + (x2.argmax(1) == labels[:,3:6].argmax(1)).type(
-                torch.float).sum().item() + (x3.argmax(1) == labels[:,6:9].argmax(1)).type(
-                torch.float).sum().item() + (x4.argmax(1) == labels[:,9:].argmax(1)).type(
-                torch.float).sum().item()
-            else:
                 correct += (pred.argmax(1) == labels.argmax(1)).type(
                 torch.float).sum().item()
         
-        accuracy = correct / len(test_loader.dataset)
+        if config["cnn"]["model"]["type"]["multihead"]:
+            correct = sum(correct_list)
+            for i in range(len(correct_list)):
+                heads_train_acc[i] = correct_list[i] / len(test_loader.dataset)
+            total_accuracy = correct / (len(test_loader.dataset) * 4)
 
-    return accuracy
+            return total_accuracy, heads_train_acc
+        else:
+            accuracy = correct / len(test_loader.dataset)
+            return accuracy
 
 
 config = json.load(open("config.json"))
