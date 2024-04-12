@@ -1,5 +1,5 @@
 {
-    "active_user": "leon",
+    "active_user": "jiri",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -31,7 +31,7 @@
             "width": 224,
             "height": 224
         },
-        "crop_size": 224,
+        "crop_size": 244,
         "setting": {
             "crop": true,
             "resize": true,
@@ -86,21 +86,21 @@
             }
         },
         "training": {
-            "batch_size": 16,
+            "batch_size": 32,
             "num_epochs": 1,
             "num_samples_subset": 50,
             "learning_rate": 0.001,
-            "loss_function": "2",
+            "loss_function": "1",
             "optimizer": "1",
             "print_step": 10000,
             "shuffle": true,
-            "train_split": 0.8,
-            "val_split": 0.1,
+            "train_split": 0.7,
+            "val_split": 0.2,
             "test_split": 0.1,
             "seed": 42,
             "num_workers": 4,
             "normalization": {
-                "use": true,
+                "use": false,
                 "compute_new_mean_std": false,
                 "log_path": "./logs/normalization"
             },
