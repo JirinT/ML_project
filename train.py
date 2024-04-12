@@ -264,8 +264,10 @@ def train():
             if config["cnn"]["model"]["type"]["multihead"]:
                 for i in range(len(trainCorrect_list)):
                     trainCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
+                
+                comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
+                trainCorrect_total += torch.sum(comparison).item()
 
-                trainCorrect_total += (torch.cat(pred_heads, dim=1) == labels).type(torch.float).sum().item()
             else:
                 trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                 torch.float).sum().item()
@@ -320,7 +322,8 @@ def train():
                 if config["cnn"]["model"]["type"]["multihead"]:
                     for i in range(len(valCorrect_list)):
                         valCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
-                    valCorrect_total += (torch.cat(pred_heads, dim=1) == labels).type(torch.float).sum().item()
+                    comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
+                    valCorrect_total += torch.sum(comparison).item()
                 else:
                     trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                     torch.float).sum().item()
