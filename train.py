@@ -436,6 +436,7 @@ if __name__ == "__main__":
         print("Visualizing the network...")
         images, _ = next(iter(val_loader))
         os.environ["PATH"] += os.pathsep + config["cnn"]["visualization"]["graphviz_path"]
+        images = images.to(device)
         dot = make_dot(model(images), params=dict(best_model.named_parameters()))
         dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
 
