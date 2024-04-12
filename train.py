@@ -500,7 +500,7 @@ if __name__ == "__main__":
             plt.xlabel("Predicted")
             plt.ylabel("True")
             plt.title(f"Confusion Matrix for output head {i}")
-            plt.savefig(os.path.join(log_folder_training, f"confusion_matrix_{i}.png"))
+            plt.savefig(os.path.join(plot_folder_training, f"confusion_matrix_{i}.png"))
             plt.close()
 
     print("All done!")
