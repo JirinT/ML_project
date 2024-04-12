@@ -38,21 +38,49 @@ def plot_learning_curve(loss_dict, plot_folder_training):
     plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
 
 def show_histogram(loader, config):
-    label_counts = {0: 0, 1: 0, 2: 0}
-    for _, labels in loader:
-        for label in labels:
-            label_counts[label.argmax().item()] += 1
+    if config["cnn"]["model"]["type"]["multihead"]:
+        # now we need to count the amount of samples for each class for each head
+        label_counts = [{0: 0, 1: 0, 2: 0} for _ in range(config["cnn"]["model"]["num_heads"])]
+        for _, labels in loader:
+            for i in range(len(label_counts)):
+                for label in labels:
+                    label_counts[i][label.argmax().item()] += 1
+        
+        labels = list(label_counts[0].keys())
+        counts = list(label_counts[0].values())
+        width = 0.35
+        fig, ax = plt.subplots()
+        ax.bar(np.array(labels) - width, counts, width, label='Head 1')
+        counts = list(label_counts[1].values())
+        ax.bar(np.array(labels), counts, width, label='Head 2')
+        counts = list(label_counts[2].values())
+        ax.bar(np.array(labels) + width, counts, width, label='Head 3')
+        counts = list(label_counts[3].values())
+        ax.bar(np.array(labels) + 2*width, counts, width, label='Head 4')
+        ax.set_xticks([0, 1, 2])
+        ax.set_xticklabels(['Low', 'Good', 'High'])
+        ax.legend()
+        plt.grid(True)
+        plt.title("hovnous")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_multihead_{timestamp}.png"))
 
-    labels = list(label_counts.keys())
-    counts = list(label_counts.values())
+    else:
+        label_counts = {0: 0, 1: 0, 2: 0}
+        for _, labels in loader:
+            for label in labels:
+                label_counts[label.argmax().item()] += 1
 
-    plt.bar(labels, counts, color='skyblue')
-    plt.grid(True)
-    plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
-    plt.title("Z-offset")
-    plt.ylabel("Amount of samples")
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{timestamp}.png"))
+        labels = list(label_counts.keys())
+        counts = list(label_counts.values())
+
+        plt.bar(labels, counts, color='skyblue')
+        plt.grid(True)
+        plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
+        plt.title("Z-offset")
+        plt.ylabel("Amount of samples")
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{timestamp}.png"))
 
 def create_folders_for_logging(config):
     now = datetime.now()
@@ -176,7 +204,7 @@ def train():
                 loss_3 = criterion(x3, labels[:,6:9])
                 loss_4 = criterion(x4, labels[:,9:])
                 losses = torch.stack([loss_1, loss_2, loss_3, loss_4])
-                loss = torch.mean(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                loss = torch.sum(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
             else:
                 pred = model(images)
                 loss = criterion(pred, labels) # calculate the loss for the current batch
@@ -225,7 +253,8 @@ def train():
                     loss_3 = criterion(x3, labels[:,6:9])
                     loss_4 = criterion(x4, labels[:,9:])
                     losses = torch.stack([loss_1, loss_2, loss_3, loss_4])
-                    loss = torch.mean(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                    loss = torch.sum(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                    # loss = torch.mean(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
                 else:
                     pred = model(images)
                     loss = criterion(pred, labels) # calculate the loss for the current batch
@@ -366,6 +395,7 @@ if __name__ == "__main__":
     
     # Show histogram of the labels:
     if config["general"]["log_histograms"]:
+        print("Creating histograms...")
         show_histogram(train_loader, config)
 
     # Choose and Initialize a model
@@ -380,7 +410,7 @@ if __name__ == "__main__":
         model = models.resnet34(weights=None, num_classes=num_classes).to(device) 
 
     elif config["cnn"]["model"]["type"]["multihead"]:
-        shared_backbone = models.resnet18(weights=None, num_classes=num_classes)
+        shared_backbone = models.resnet18(weights=None, num_classes=num_classes).to(device)
         # feature extraction - getting the output layer after convolution layers:
         return_nodes = {
         "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
