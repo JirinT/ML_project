@@ -373,6 +373,10 @@ if __name__ == "__main__":
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # If using a GPU, clear the cache:
+    if device == torch.device('cuda'):
+        torch.cuda.empty_cache()
+
     print("Used device is: ", device)
 
     # define the active user and his data path
@@ -481,7 +485,7 @@ if __name__ == "__main__":
         "2": optim.SGD(model.parameters(), lr=learning_rate)
     }
 
-    criterion = loss_functions[config["cnn"]["training"]["loss_function"]]
+    criterion = loss_functions[config["cnn"]["training"]["loss_function"]].to(device)
     optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
 
     loss_dict = {
