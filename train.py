@@ -163,7 +163,11 @@ def create_weighted_sampler(train_subset, num_classes):
     shuffle = False
     return sampler, shuffle
 
-def apply_regularization(model, loss, lambda_regularization, p=1):
+def apply_regularization(model, loss, lambda_regularization, config):
+    if config["cnn"]["model"]["regularization"]["lasso"]:
+        p = 1
+    elif config["cnn"]["model"]["regularization"]["ridge"]:
+        p = 2
     # L1 regularization term - LASSO
     l1 = torch.tensor(0.)
     for param in model.parameters():
@@ -226,48 +230,46 @@ def train():
                 pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
                 pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now a list of 4 tensors of shape (batch_size x 3) and contains [0,1,0] for example
                 pred_heads = [x.to(device) for x in pred_heads]
-                # losses for each head:
+
+                 # Compute the loss for each head and update the head parameters:
                 if config["cnn"]["training"]["loss_function"] != 1:
-                    loss_1 = criterion(x1, labels[:,:3])
-                    loss_2 = criterion(x2, labels[:,3:6])
-                    loss_3 = criterion(x3, labels[:,6:9])
-                    loss_4 = criterion(x4, labels[:,9:])
+                    losses = [criterion(x, labels[:,i*3:(i+1)*3]) for i, x in enumerate([x1, x2, x3, x4])]
                 else:
-                    loss_1 = criterion(x1, labels[:,:3].argmax(1))
-                    loss_2 = criterion(x2, labels[:,3:6].argmax(1))
-                    loss_3 = criterion(x3, labels[:,6:9].argmax(1))
-                    loss_4 = criterion(x4, labels[:,9:].argmax(1))
+                    losses = [criterion(x, labels[:,i*3:(i+1)*3].argmax(1)) for i, x in enumerate([x1, x2, x3, x4])]
+                total_loss = sum(losses)
 
-                losses = torch.stack([loss_1, loss_2, loss_3, loss_4])
-                loss = torch.sum(losses) # WRONG - NEEDS TO BE SUMMED JUST BEFORE BACKBONE
-            else:
-                pred = model(images)
-                loss = criterion(pred, labels) # calculate the loss for the current batch
+                for i, (optimizer_head, loss) in enumerate(zip(optimizer_heads, losses)):
+                    # if config["cnn"]["model"]["regularization"]["use"]: # Regularization
+                    #     loss = apply_regularization(model, loss.clone(), lambda_regularization, config)
+                    optimizer_head.zero_grad()
+                    loss.backward(retain_graph=True)
+                    optimizer_head.step()
 
-            # Regularization
-            if config["cnn"]["model"]["regularization"]["use"]:
-                if config["cnn"]["model"]["regularization"]["lasso"]:
-                    p = 1
-                elif config["cnn"]["model"]["regularization"]["ridge"]:
-                    p = 2
+                # Compute the sum of losses in heads and update the backbone:
+                with torch.autograd.set_detect_anomaly(True):
+                    optimizer_backbone.zero_grad()
+                    total_loss.backward()
+                    optimizer_backbone.step()
 
-                loss = apply_regularization(model, loss, lambda_regularization, p=p)
-
-            # Backward and optimize
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            totalTrainLoss += loss.item()
-
-            if config["cnn"]["model"]["type"]["multihead"]:
+                totalTrainLoss += total_loss.item()
                 for i in range(len(trainCorrect_list)):
                     trainCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
-                
+
                 comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
                 trainCorrect_total += torch.sum(comparison).item()
 
             else:
+                pred = model(images)
+                loss = criterion(pred, labels) # calculate the loss for the current batch
+                if config["cnn"]["model"]["regularization"]["use"]: # Regularization
+                    loss = apply_regularization(model, loss, lambda_regularization, config)
+
+                # Backward and optimize
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+
+                totalTrainLoss += loss.item()
                 trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                 torch.float).sum().item()
 
@@ -290,41 +292,46 @@ def train():
                     pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
                     pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now vector of shape (batch_size x 12) and contains [0,0,0,1,0,0,0,1,0,0,0,1] for example
                     pred_heads = [x.to(device) for x in pred_heads]
-                    # losses for each head:
-                    if config["cnn"]["training"]["loss_function"] != 1:
-                        loss_1 = criterion(x1, labels[:,:3])
-                        loss_2 = criterion(x2, labels[:,3:6])
-                        loss_3 = criterion(x3, labels[:,6:9])
-                        loss_4 = criterion(x4, labels[:,9:])
-                    else:
-                        loss_1 = criterion(x1, labels[:,:3].argmax(1))
-                        loss_2 = criterion(x2, labels[:,3:6].argmax(1))
-                        loss_3 = criterion(x3, labels[:,6:9].argmax(1))
-                        loss_4 = criterion(x4, labels[:,9:].argmax(1))
 
-                    losses = torch.stack([loss_1, loss_2, loss_3, loss_4]) 
-                    loss = torch.sum(losses) # WRONG!!!! WE NEED TO SUM IT JUST BEFORE BACKBONE
+                    # Compute the loss for each head and update the head parameters:
+                    if config["cnn"]["training"]["loss_function"] != 1:
+                        losses = torch.stack([criterion(x, labels[:,i*3:(i+1)*3]) for i, x in enumerate([x1, x2, x3, x4])])
+                    else:
+                        losses = torch.stack([criterion(x, labels[:,i*3:(i+1)*3].argmax(1)) for i, x in enumerate([x1, x2, x3, x4])])
+
+                    for i, (optimizer_head, loss) in enumerate(zip(optimizer_heads, losses)):
+                        if config["cnn"]["model"]["regularization"]["use"]: # Regularization
+                            loss = apply_regularization(model, loss, lambda_regularization, config)
+                        optimizer_head.zero_grad()
+                        loss.backward(retain_graph=True)
+                        optimizer_head.step()
+
+                    # Compute the sum of losses in heads and update the backbone:
+                    total_loss = torch.sum(losses)
+                    optimizer_backbone.zero_grad()
+                    total_loss.backward()
+                    optimizer_backbone.step()
+
+                    totalValLoss += total_loss.item()
+                    for i in range(len(valCorrect_list)):
+                        valCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
+                    
+                    comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
+                    valCorrect_total += torch.sum(comparison).item()
 
                 else:
                     pred = model(images)
                     loss = criterion(pred, labels) # calculate the loss for the current batch
+                    if config["cnn"]["model"]["regularization"]["use"]: # Regularization
+                        loss = apply_regularization(model, loss, lambda_regularization, config)
 
-                if config["cnn"]["model"]["regularization"]["use"]:
-                    if config["cnn"]["model"]["regularization"]["lasso"]:
-                        p = 1
-                    elif config["cnn"]["model"]["regularization"]["ridge"]:
-                        p = 2
+                    # Backward and optimize
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
 
-                    loss = apply_regularization(model, loss, lambda_regularization, p=p)
-
-                totalValLoss += loss.item()
-                if config["cnn"]["model"]["type"]["multihead"]:
-                    for i in range(len(valCorrect_list)):
-                        valCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
-                    comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
-                    valCorrect_total += torch.sum(comparison).item()
-                else:
-                    trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
+                    totalValLoss += loss.item()
+                    valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                     torch.float).sum().item()
 
         avgTrainLoss = totalTrainLoss / total_step_train
@@ -485,7 +492,11 @@ if __name__ == "__main__":
     }
 
     criterion = loss_functions[config["cnn"]["training"]["loss_function"]].to(device)
-    optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
+    if config["cnn"]["model"]["type"]["multihead"]:
+        optimizer_backbone = optim.Adam(shared_backbone.parameters(), lr=learning_rate) # Create an optimizer for the backbone
+        optimizer_heads = [optim.Adam(head.parameters(), lr=learning_rate) for head in model.heads] # Create an optimizer for each head
+    else:
+        optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
 
     loss_dict = {
         "train_loss": [],
