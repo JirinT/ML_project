@@ -178,7 +178,6 @@ def one_hot_encode(tensor):
     # Create a new tensor with zeros and a 1 at the max_index
     one_hot = torch.zeros_like(tensor)
     one_hot[max_index] = 1
-    # one_hot = one_hot.numpy()
 
     return one_hot
 
@@ -226,7 +225,7 @@ def train():
 
                 pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
                 pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now a list of 4 tensors of shape (batch_size x 3) and contains [0,1,0] for example
-               
+                pred_heads = [x.to(device) for x in pred_heads]
                 # losses for each head:
                 if config["cnn"]["training"]["loss_function"] != 1:
                     loss_1 = criterion(x1, labels[:,:3])
@@ -290,7 +289,7 @@ def train():
 
                     pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
                     pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now vector of shape (batch_size x 12) and contains [0,0,0,1,0,0,0,1,0,0,0,1] for example
-                    
+                    pred_heads = [x.to(device) for x in pred_heads]
                     # losses for each head:
                     if config["cnn"]["training"]["loss_function"] != 1:
                         loss_1 = criterion(x1, labels[:,:3])
