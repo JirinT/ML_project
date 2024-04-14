@@ -512,10 +512,12 @@ if __name__ == "__main__":
         dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
 
     # plot the training loss and accuracy
+    print("Plotting learning curve")
     plot_learning_curve(loss_dict, plot_folder_training)
 
     # Create the confusion matrix
     if config["general"]["log_confusion_matrix"]:
+        "Creating the confusion matrix..."
         y_true = [[] for _ in range(config["cnn"]["model"]["num_heads"])]
         y_pred = [[] for _ in range(config["cnn"]["model"]["num_heads"])]
 
