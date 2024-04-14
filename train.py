@@ -22,6 +22,8 @@ from datasets.custom_dataset import CustomDataset
 from preprocessing.simple_preprocessor import SimplePreprocessor
 from torchvision.models.feature_extraction import create_feature_extractor
 from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 
 def plot_learning_curve(loss_dict, plot_folder_training):
@@ -511,5 +513,33 @@ if __name__ == "__main__":
 
     # plot the training loss and accuracy
     plot_learning_curve(loss_dict, plot_folder_training)
+
+    # Create the confusion matrix
+    if config["general"]["log_confusion_matrix"]:
+        y_true = [[] for _ in range(config["cnn"]["model"]["num_heads"])]
+        y_pred = [[] for _ in range(config["cnn"]["model"]["num_heads"])]
+
+        for images, labels in test_loader:
+            images = images.to(device)
+            labels = labels.to(device)
+            outputs = best_model(images)
+            
+            for i, output in enumerate(outputs):
+                _, predicted = torch.max(output, 1)
+                y_true[i].extend(labels[:, i].tolist())
+                y_pred[i].extend(predicted.tolist())
+
+        # Create a confusion matrix for each output head
+        for i in range(4):
+            cm = confusion_matrix(y_true[i], y_pred[i], labels=[0, 1, 2])
+
+            # Plot the confusion matrix
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False)
+            plt.xlabel("Predicted")
+            plt.ylabel("True")
+            plt.title(f"Confusion Matrix for output head {i}")
+            plt.savefig(os.path.join(plot_folder_training, f"confusion_matrix_{i}.png"))
+            plt.close()
 
     print("All done!")

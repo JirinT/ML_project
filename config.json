@@ -24,7 +24,7 @@
         "save_cv_plot": false,
         "save_model": true,
         "show_sample_images": false,
-        "show_net_structure": true
+        "show_net_structure": false
     },
     "preprocessor": {
         "resize": {
@@ -47,7 +47,7 @@
             "distance_metric": "euclidean"
         },
         "training": {
-            "num_samples_subset": 100000,
+            "num_samples_subset": 1000,
             "start_idx": null,
             "end_idx": null,
             "test_size": 0.1,
