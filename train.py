@@ -242,24 +242,15 @@ def train():
             labels = labels.to(device)
             # Forward pass
             if config["cnn"]["model"]["type"]["multihead"]:
-                _, losses, _ = compute_losses(model, images, labels, config, criterion, device)
-
-                for i, (optimizer_head, loss) in enumerate(zip(optimizer_heads, losses)):
-                    optimizer_head.zero_grad()
-                    if i == len(optimizer_heads) - 1:  # Check if it's the last iteration
-                        loss.backward(retain_graph=False)  # Don't retain the computation graph
-                    else:
-                        loss.backward(retain_graph=True)  # Retain the computation graph
-                    optimizer_head.step()  # Update this head
-
-                # WE NEED TO COMPUTE THE LOSSES ONCE MORE WITH THE UPDATED HEADS,
-                # IF NOT THERE IS ERROR WITH GRADIENTS BECAUSE THE COMPUTATION GRAPH IS CHANGED AFTER THE FIRST .UPDATE()
-                total_loss, _, pred_heads = compute_losses(model, images, labels, config, criterion, device)
-                
                 # Compute the sum of losses in heads and update the backbone:
-                optimizer_backbone.zero_grad()
-                total_loss.backward()  # Compute gradients for the backbone
-                optimizer_backbone.step()  # Update the backbone
+                total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
+                # Apply regularization
+                if config["cnn"]["model"]["regularization"]["use"]:
+                    loss = apply_regularization(model, loss, lambda_regularization, config)
+                
+                optimizer.zero_grad() # zero the gradients
+                total_loss.backward() # backpropagation through the whole network
+                optimizer.step() # update the weights
 
                 totalTrainLoss += total_loss.item()
                 for i in range(len(trainCorrect_list)):
@@ -479,11 +470,7 @@ if __name__ == "__main__":
     }
 
     criterion = loss_functions[config["cnn"]["training"]["loss_function"]].to(device)
-    if config["cnn"]["model"]["type"]["multihead"]:
-        optimizer_backbone = optim.Adam(shared_backbone.parameters(), lr=learning_rate) # Create an optimizer for the backbone
-        optimizer_heads = [optim.Adam(head.parameters(), lr=learning_rate) for head in model.heads] # Create an optimizer for each head
-    else:
-        optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
+    optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
 
     loss_dict = {
         "train_loss": [],
