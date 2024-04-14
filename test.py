@@ -58,8 +58,9 @@ def test_model(model, test_loader, device):
                 raw_predictions = [x1, x2, x3, x4] # raw_predictions are outputs of last linear layer, before LogSoftMax
 
                 pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
-                pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now vector of shape (batch_size x 12) and contains [0,0,0,1,0,0,0,1,0,0,0,1] for example
-               
+                pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now a list of 4 tensors of shape (batch_size x 3) and contains [0,1,0] for example
+                pred_heads = [x.to(device) for x in pred_heads]
+
                 for i in range(len(pred_heads)):
                     correct_list[i] += (pred_heads[i].argmax(1) == labels[:,i*3:(i+1)*3].argmax(1)).type(torch.float).sum().item()
                 comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
