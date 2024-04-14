@@ -4,10 +4,31 @@ import torch
 
 from torch.utils.data import DataLoader, random_split, Subset
 from torchvision.transforms import transforms
+import torch.nn as nn
 
 from datasets.custom_dataset import CustomDataset
 from preprocessing.simple_preprocessor import SimplePreprocessor
 
+def one_hot_encode(tensor):
+    # Find the index of the maximum value
+    max_index = tensor.argmax()
+    # Create a new tensor with zeros and a 1 at the max_index
+    one_hot = torch.zeros_like(tensor)
+    one_hot[max_index] = 1
+    # one_hot = one_hot.numpy()
+
+    return one_hot
+
+def decode_predictions(pred_heads_log_prob):
+    prob_heads = [torch.exp(x) for x in pred_heads_log_prob]  # convert to standard probabilities
+    pred_heads_list = []
+    for j in range(len(prob_heads)):
+        pred_head = torch.zeros((len(prob_heads[j]), 3))
+        for i in range(len(prob_heads[j])):
+            pred_head[i] = one_hot_encode(prob_heads[j][i])
+        pred_heads_list.append(pred_head)
+
+    return pred_heads_list
 
 def test_model(model, test_loader, device):
     """
@@ -24,6 +45,8 @@ def test_model(model, test_loader, device):
     correct_list = [0, 0, 0, 0]
     heads_train_acc = [0, 0, 0, 0]
     correct = 0
+    testCorrect_total = 0
+
     model.eval()
     with torch.no_grad():
         for (images, labels) in test_loader:
@@ -31,20 +54,25 @@ def test_model(model, test_loader, device):
             labels = labels.to(device)
 
             if config["cnn"]["model"]["type"]["multihead"]:
-                x1, x2, x3, x4 = model(images)
-                pred_heads = [x1, x2, x3, x4]
+                x1, x2, x3, x4 = model(images) # x1, x2, x3, x4 are outputs of last linear layer - raw data
+                raw_predictions = [x1, x2, x3, x4] # raw_predictions are outputs of last linear layer, before LogSoftMax
+
+                pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
+                pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now vector of shape (batch_size x 12) and contains [0,0,0,1,0,0,0,1,0,0,0,1] for example
+               
                 for i in range(len(pred_heads)):
                     correct_list[i] += (pred_heads[i].argmax(1) == labels[:,i*3:(i+1)*3].argmax(1)).type(torch.float).sum().item()
+                comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
+                testCorrect_total += torch.sum(comparison).item()
             else:
                 pred = model(images)
                 correct += (pred.argmax(1) == labels.argmax(1)).type(
                 torch.float).sum().item()
         
         if config["cnn"]["model"]["type"]["multihead"]:
-            correct = sum(correct_list)
             for i in range(len(correct_list)):
                 heads_train_acc[i] = correct_list[i] / len(test_loader.dataset)
-            total_accuracy = correct / (len(test_loader.dataset) * 4)
+            total_accuracy = testCorrect_total / len(test_loader.dataset)
 
             return total_accuracy, heads_train_acc
         else:

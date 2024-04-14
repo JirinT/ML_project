@@ -165,7 +165,11 @@ def create_weighted_sampler(train_subset, num_classes):
     shuffle = False
     return sampler, shuffle
 
-def apply_regularization(model, loss, lambda_regularization, p=1):
+def apply_regularization(model, loss, lambda_regularization, config):
+    if config["cnn"]["model"]["regularization"]["lasso"]:
+        p = 1
+    elif config["cnn"]["model"]["regularization"]["ridge"]:
+        p = 2
     # L1 regularization term - LASSO
     l1 = torch.tensor(0.)
     for param in model.parameters():
@@ -173,6 +177,43 @@ def apply_regularization(model, loss, lambda_regularization, p=1):
 
     loss += lambda_regularization * l1
     return loss
+
+def one_hot_encode(tensor):
+    # Find the index of the maximum value
+    max_index = tensor.argmax()
+    # Create a new tensor with zeros and a 1 at the max_index
+    one_hot = torch.zeros_like(tensor)
+    one_hot[max_index] = 1
+
+    return one_hot
+
+def decode_predictions(pred_heads_log_prob):
+    prob_heads = [torch.exp(x) for x in pred_heads_log_prob]  # convert to standard probabilities
+    pred_heads_list = []
+    for j in range(len(prob_heads)):
+        pred_head = torch.zeros((len(prob_heads[j]), 3))
+        for i in range(len(prob_heads[j])):
+            pred_head[i] = one_hot_encode(prob_heads[j][i])
+        pred_heads_list.append(pred_head)
+
+    return pred_heads_list
+        
+def compute_losses(model, images, labels, config, criterion, device):
+    x1, x2, x3, x4 = model(images) # x1, x2, x3, x4 are outputs of last linear layer - raw data
+    raw_predictions = [x1, x2, x3, x4] # raw_predictions are outputs of last linear layer, before LogSoftMax
+
+    pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
+    pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now a list of 4 tensors of shape (batch_size x 3) and contains [0,1,0] for example
+    pred_heads = [x.to(device) for x in pred_heads]
+
+    # Compute the loss for each head and update the head parameters:
+    if config["cnn"]["training"]["loss_function"] != 1:
+        losses = [criterion(x, labels[:,i*3:(i+1)*3]) for i, x in enumerate([x1, x2, x3, x4])]
+    else:
+        losses = [criterion(x, labels[:,i*3:(i+1)*3].argmax(1)) for i, x in enumerate([x1, x2, x3, x4])]
+    total_loss = sum(losses)
+
+    return total_loss, losses, pred_heads
 
 def train():
     # Train the model
@@ -188,49 +229,50 @@ def train():
         totalValLoss = 0
         trainCorrect = 0 # trainCorrect is the number of correctly predicted samples in total
         valCorrect = 0 # valCorrect is the number of correctly predicted samples in total
+        trainCorrect_total = 0 # trainCorrect_total is the number of correctly predicted samples for all 4 heads
+        valCorrect_total = 0  # valCorrect_total is the number of correctly predicted samples for all 4 heads
+
         trainCorrect_list = [0, 0, 0, 0] # trainCorrect_list is the number of correctly predicted samples for each head
         valCorrect_list = [0, 0, 0, 0] # valCorrect_list is the number of correctly predicted samples for each head
         heads_train_acc = [0, 0, 0, 0] # heads_train_acc is the accuracy for each head
         heads_val_acc = [0, 0, 0, 0] # heads_val_acc is the accuracy for each head
+        totalValLoss_heads = [0, 0, 0, 0] # totalValLoss_heads is the total loss for each head
+        totalTrainLoss_heads = [0, 0, 0, 0] # totalTrainLoss_heads is the total loss for each head
 
         for train_idx, (images, labels) in tqdm(enumerate(train_loader), desc="Processing Samples", total=len(train_loader)):
             images = images.to(device)
             labels = labels.to(device)
             # Forward pass
             if config["cnn"]["model"]["type"]["multihead"]:
-                x1, x2, x3, x4 = model(images)
-                pred_heads = [x1, x2, x3, x4]
-                # losses for each head:
-                loss_1 = criterion(x1, labels[:,:3])
-                loss_2 = criterion(x2, labels[:,3:6])
-                loss_3 = criterion(x3, labels[:,6:9])
-                loss_4 = criterion(x4, labels[:,9:])
-                losses = torch.stack([loss_1, loss_2, loss_3, loss_4])
-                loss = torch.sum(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                # Compute the sum of losses in heads and update the backbone:
+                total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
+                # Apply regularization
+                if config["cnn"]["model"]["regularization"]["use"]:
+                    loss = apply_regularization(model, loss, lambda_regularization, config)
+                
+                optimizer.zero_grad() # zero the gradients
+                total_loss.backward() # backpropagation through the whole network
+                optimizer.step() # update the weights
+
+                totalTrainLoss += total_loss.item()
+                for i in range(len(trainCorrect_list)):
+                    trainCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
+                    totalTrainLoss_heads[i] += losses[i].item()
+                comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
+                trainCorrect_total += torch.sum(comparison).item()
+
             else:
                 pred = model(images)
                 loss = criterion(pred, labels) # calculate the loss for the current batch
+                if config["cnn"]["model"]["regularization"]["use"]: # Regularization
+                    loss = apply_regularization(model, loss, lambda_regularization, config)
 
-            # Regularization
-            if config["cnn"]["model"]["regularization"]["use"]:
-                if config["cnn"]["model"]["regularization"]["lasso"]:
-                    p = 1
-                elif config["cnn"]["model"]["regularization"]["ridge"]:
-                    p = 2
+                # Backward and optimize
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-                loss = apply_regularization(model, loss, lambda_regularization, p=p)
-
-            # Backward and optimize
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            totalTrainLoss += loss.item()
-            if config["cnn"]["model"]["type"]["multihead"]:
-                for i in range(len(trainCorrect_list)):
-                    trainCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
-
-            else:
+                totalTrainLoss += loss.item()
                 trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                 torch.float).sum().item()
 
@@ -247,49 +289,40 @@ def train():
 
                 # Forward pass
                 if config["cnn"]["model"]["type"]["multihead"]:
-                    x1, x2, x3, x4 = model(images)
-                    pred_heads = [x1, x2, x3, x4]
-                    # losses for each head:
-                    loss_1 = criterion(x1, labels[:,:3])
-                    loss_2 = criterion(x2, labels[:,3:6])
-                    loss_3 = criterion(x3, labels[:,6:9])
-                    loss_4 = criterion(x4, labels[:,9:])
-                    losses = torch.stack([loss_1, loss_2, loss_3, loss_4])
-                    loss = torch.sum(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
-                    # loss = torch.mean(losses) # total loss - MAYBE ADD WEIGHTS TO EACH LOSS???
+                    total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
+
+                    totalValLoss += total_loss.item()
+                    for i in range(len(valCorrect_list)):
+                        valCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
+                        totalValLoss_heads[i] += losses[i].item()
+
+                    comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
+                    valCorrect_total += torch.sum(comparison).item()
+
                 else:
                     pred = model(images)
                     loss = criterion(pred, labels) # calculate the loss for the current batch
+                    if config["cnn"]["model"]["regularization"]["use"]: # Regularization
+                        loss = apply_regularization(model, loss, lambda_regularization, config)
 
-                if config["cnn"]["model"]["regularization"]["use"]:
-                    if config["cnn"]["model"]["regularization"]["lasso"]:
-                        p = 1
-                    elif config["cnn"]["model"]["regularization"]["ridge"]:
-                        p = 2
-
-                    loss = apply_regularization(model, loss, lambda_regularization, p=p)
-
-                totalValLoss += loss.item()
-                if config["cnn"]["model"]["type"]["multihead"]:
-                    for i in range(len(valCorrect_list)):
-                        valCorrect_list[i] += (pred_heads[i].argmax(1) == labels[:,3*i:3*(i+1)].argmax(1)).type(torch.float).sum().item()
-                else:
-                    trainCorrect += (pred.argmax(1) == labels.argmax(1)).type(
+                    totalValLoss += loss.item()
+                    valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                     torch.float).sum().item()
 
         avgTrainLoss = totalTrainLoss / total_step_train
         avgValLoss = totalValLoss / total_step_val
+        avgValLoss_heads = [total / total_step_val for total in totalValLoss_heads]
+        avgTrainLoss_heads = [total / total_step_train for total in totalTrainLoss_heads]
+
         if config["cnn"]["model"]["type"]["multihead"]:
-            trainCorrect_total = sum(trainCorrect_list) # trainCorrect_total is sum of correctly predicted samples for all 4 heads
-            valCorrect_total = sum(valCorrect_list) # valCorrect_total is sum of correctly predicted samples for all 4 heads
             # train accuracies:
-            train_acc = trainCorrect_total / (total_step_train*4) # train_acc is the overall accuracy predicting all 4 heads
+            train_acc = trainCorrect_total / total_step_train # train_acc is the overall accuracy predicting all 4 heads
             # train accuracies for each head:
             for i in range(len(trainCorrect_list)):
                 heads_train_acc[i] = trainCorrect_list[i] / total_step_train
 
             # val accuracies:
-            val_acc = valCorrect_total / (total_step_val*4) # val_acc is the overall accuracy predicting all 4 heads
+            val_acc = valCorrect_total / total_step_val # val_acc is the overall accuracy predicting all 4 heads
             # val accuracies for each head:
             for i in range(len(valCorrect_list)):
                 heads_val_acc[i] = valCorrect_list[i] / total_step_val
@@ -313,7 +346,9 @@ def train():
             file.write(f"\tTrain accuracy: {train_acc:.4f}, Val accuracy: {val_acc:.4f}\n")
             if config["cnn"]["model"]["type"]["multihead"]:
                 for i in range(len(heads_train_acc)):
-                    file.write(f"\t\tTrain accuracy head {i+1}: {heads_train_acc[i]:.4f}, Val accuracy head {i+1}: {heads_val_acc[i]:.4f}\n")
+                    file.write(f"\t\tHead {i+1}:\n")
+                    file.write(f"\t\t\tTrain loss: {avgTrainLoss_heads[i]:.4f}, Val loss: {avgValLoss_heads[i]:.4f}\n")
+                    file.write(f"\t\t\tTrain accuracy: {heads_train_acc[i]:.4f}, Val accuracy: {heads_val_acc[i]:.4f}\n")
             file.write(f"\tTime elapsed: {time.time() - start_time:.2f} seconds\n")
 
     return best_model
@@ -324,6 +359,10 @@ if __name__ == "__main__":
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # If using a GPU, clear the cache:
+    if device == torch.device('cuda'):
+        torch.cuda.empty_cache()
+
     print("Used device is: ", device)
 
     # define the active user and his data path
@@ -432,7 +471,7 @@ if __name__ == "__main__":
         "2": optim.SGD(model.parameters(), lr=learning_rate)
     }
 
-    criterion = loss_functions[config["cnn"]["training"]["loss_function"]]
+    criterion = loss_functions[config["cnn"]["training"]["loss_function"]].to(device)
     optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
 
     loss_dict = {

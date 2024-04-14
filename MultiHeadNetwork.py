@@ -18,7 +18,6 @@ class MultiHeadNetwork(nn.Module):
             nn.Linear(input_size, input_size//2),
             nn.ReLU(),
             nn.Linear(input_size//2, output_size), # output_size must be set to 3 in config if we use this model for classification
-            nn.LogSoftmax(dim=1)
         )
         return head
     
