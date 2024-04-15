@@ -302,9 +302,6 @@ def train():
                 else:
                     pred = model(images)
                     loss = criterion(pred, labels) # calculate the loss for the current batch
-                    if config["cnn"]["model"]["regularization"]["use"]: # Regularization
-                        loss = apply_regularization(model, loss, lambda_regularization, config)
-
                     totalValLoss += loss.item()
                     valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                     torch.float).sum().item()
