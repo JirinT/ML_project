@@ -280,7 +280,7 @@ def train():
 
             if (train_idx+1) % config["cnn"]["training"]["print_step"] == 0:
                 with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
-                    file.write(f"Epoch [{epoch+1}/{num_epochs}], Step [{train_idx+1}/{total_step_train}], Loss: {loss.item():.4f}\n")
+                    file.write(f"Epoch [{epoch+1}/{num_epochs}], Step [{train_idx+1}/{total_step_train}], Loss: {total_loss.item():.4f}\n")
 
         # Validate the model
         model.eval() 
