@@ -173,6 +173,7 @@ def apply_regularization(model, loss, lambda_regularization, config):
         p = 2
     # L1 regularization term - LASSO
     l1 = torch.tensor(0.)
+    l1 = l1.to(device)
     for param in model.parameters():
         l1 += torch.norm(param, p=1)
 
@@ -249,7 +250,7 @@ def train():
                 total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
                 # Apply regularization
                 if config["cnn"]["model"]["regularization"]["use"]:
-                    loss = apply_regularization(model, loss, lambda_regularization, config)
+                    total_loss = apply_regularization(model, total_loss, lambda_regularization, config)
                 
                 optimizer.zero_grad() # zero the gradients
                 total_loss.backward() # backpropagation through the whole network
@@ -465,7 +466,7 @@ if __name__ == "__main__":
         "4": nn.NLLLoss()
     }
     optimizer = {
-        "1": optim.Adam(model.parameters(), lr=learning_rate),
+        "1": optim.AdamW(model.parameters(), lr=learning_rate),
         "2": optim.SGD(model.parameters(), lr=learning_rate)
     }
 
