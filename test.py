@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
 
+config = json.load(open("config.json"))
+
 def one_hot_encode(tensor):
     # Find the index of the maximum value
     max_index = tensor.argmax()
