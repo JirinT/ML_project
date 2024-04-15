@@ -109,7 +109,7 @@ def test_model(model, test_loader, device, config):
     correct = 0
     testCorrect_total = 0
     pred_labels = [torch.empty((0,3)).to(device) for _ in range(config["cnn"]["model"]["num_heads"])]
-
+    true_labels = torch.empty((0,12)).to(device)
     model.eval()
     with torch.no_grad():
         for (images, labels) in test_loader:
@@ -122,6 +122,7 @@ def test_model(model, test_loader, device, config):
 
                 for i, x in enumerate(raw_predictions):
                     pred_labels[i] = torch.cat((pred_labels[i], x), dim=0)
+                true_labels = torch.cat((true_labels, labels), dim=0)
 
                 pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
                 pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now a list of 4 tensors of shape (batch_size x 3) and contains [0,1,0] for example
@@ -144,7 +145,7 @@ def test_model(model, test_loader, device, config):
 
             if config["general"]["log_confusion_matrix"]:
                 print("Creating confusion matrix...")
-                conf_matrix(pred_labels, labels)
+                conf_matrix(pred_labels, true_labels)
 
             return total_accuracy, heads_train_acc
         else:
