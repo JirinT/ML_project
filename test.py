@@ -108,7 +108,7 @@ def test_model(model, test_loader, device, config):
     heads_train_acc = [0, 0, 0, 0]
     correct = 0
     testCorrect_total = 0
-    pred_labels = [torch.empty((0,3)) for _ in range(config["cnn"]["model"]["num_heads"])]
+    pred_labels = [torch.empty((0,3)).to(device) for _ in range(config["cnn"]["model"]["num_heads"])]
 
     model.eval()
     with torch.no_grad():
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     test_loader = DataLoader(test_subset, batch_size=batch_size, shuffle=shuffle)
 
     # model = torch.load(os.path.join(config["general"]["model_path"], "model.pth")).to(device)
-    model = torch.load(os.path.join("logs/models/2024-04-14_19-05-55", "model.pth")).to(device)
+    model = torch.load("./logs/models/2024-04-14_19-14-33/model.pth").to(device)
 
     print("Testing the model...")
     accuracy,_ = test_model(model, test_loader, device, config)
