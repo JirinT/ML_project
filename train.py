@@ -490,7 +490,7 @@ if __name__ == "__main__":
     # Test the model
     print("Testing started...")
     if config["cnn"]["model"]["type"]["multihead"]:
-        test_accuracy, heads_test_acc = test_model(best_model, test_loader, device)
+        test_accuracy, heads_test_acc = test_model(best_model, test_loader, device, config)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"\tTest accuracy: {test_accuracy * 100:.2f}%\n")
             for i in range(len(heads_test_acc)):
@@ -528,7 +528,6 @@ if __name__ == "__main__":
                 _, predicted = torch.max(output, 1)
                 y_true[i].extend(labels[:, i].tolist())
                 y_pred[i].extend(predicted.tolist())
-            print("Test_train")
 
         # Create a confusion matrix for each output head
         for i in range(4):

@@ -14,8 +14,6 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
 
-config = json.load(open("config.json"))
-
 def one_hot_encode(tensor):
     # Find the index of the maximum value
     max_index = tensor.argmax()
@@ -94,7 +92,7 @@ def conf_matrix(outputs, labels):
 
     plt.savefig(os.path.join(conf_matrix_path, filename))
 
-def test_model(model, test_loader, device):
+def test_model(model, test_loader, device, config):
     """
     Test the model on the test dataset.
 
@@ -110,6 +108,7 @@ def test_model(model, test_loader, device):
     heads_train_acc = [0, 0, 0, 0]
     correct = 0
     testCorrect_total = 0
+    pred_labels = [torch.empty((0,3)) for _ in range(config["cnn"]["model"]["num_heads"])]
 
     model.eval()
     with torch.no_grad():
@@ -120,6 +119,9 @@ def test_model(model, test_loader, device):
             if config["cnn"]["model"]["type"]["multihead"]:
                 x1, x2, x3, x4 = model(images) # x1, x2, x3, x4 are outputs of last linear layer - raw data
                 raw_predictions = [x1, x2, x3, x4] # raw_predictions are outputs of last linear layer, before LogSoftMax
+
+                for i, x in enumerate(raw_predictions):
+                    pred_labels[i] = torch.cat((pred_labels[i], x), dim=0)
 
                 pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
                 pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now a list of 4 tensors of shape (batch_size x 3) and contains [0,1,0] for example
@@ -141,7 +143,8 @@ def test_model(model, test_loader, device):
             total_accuracy = testCorrect_total / len(test_loader.dataset)
 
             if config["general"]["log_confusion_matrix"]:
-                conf_matrix([x1, x2, x3, x4], labels)
+                print("Creating confusion matrix...")
+                conf_matrix(pred_labels, labels)
 
             return total_accuracy, heads_train_acc
         else:
@@ -173,7 +176,7 @@ if __name__ == "__main__":
         ),
         transforms.ToTensor()
     ])
-
+    print("Loading the dataset, loading model, creating data loaders...")
     dataset = CustomDataset(data_path, transform=transform)
 
     num_samples_train = int(train_split * len(dataset))
@@ -191,5 +194,6 @@ if __name__ == "__main__":
     # model = torch.load(os.path.join(config["general"]["model_path"], "model.pth")).to(device)
     model = torch.load(os.path.join("logs/models/2024-04-14_19-05-55", "model.pth")).to(device)
 
-    accuracy,_ = test_model(model, test_loader, device)
+    print("Testing the model...")
+    accuracy,_ = test_model(model, test_loader, device, config)
     print(f'Accuracy: {accuracy * 100:.2f}%')
