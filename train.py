@@ -7,6 +7,7 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 from cnn import CNN
 from tqdm import tqdm
@@ -23,7 +24,7 @@ from preprocessing.simple_preprocessor import SimplePreprocessor
 from torchvision.models.feature_extraction import create_feature_extractor
 from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
 from sklearn.metrics import confusion_matrix
-import seaborn as sns
+
 
 
 def plot_learning_curve(loss_dict, plot_folder_training):
@@ -527,6 +528,7 @@ if __name__ == "__main__":
                 _, predicted = torch.max(output, 1)
                 y_true[i].extend(labels[:, i].tolist())
                 y_pred[i].extend(predicted.tolist())
+            print("Test_train")
 
         # Create a confusion matrix for each output head
         for i in range(4):
