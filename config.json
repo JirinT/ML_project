@@ -79,7 +79,7 @@
             "num_classes": 3,
             "drop_out_rate": 0.3,
             "regularization":{
-                "use": true,
+                "use": false,
                 "lambda": 0.01,
                 "lasso": false,
                 "ridge": true
@@ -87,8 +87,8 @@
         },
         "training": {
             "batch_size": 32,
-            "num_epochs": 30,
-            "num_samples_subset": 500000,
+            "num_epochs": 20,
+            "num_samples_subset": 100000,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",

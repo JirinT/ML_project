@@ -16,6 +16,7 @@ class MultiHeadNetwork(nn.Module):
     def output_head_nn(self, input_size, output_size):
         head = nn.Sequential(
             nn.Linear(input_size, input_size//2),
+            nn.Dropout(0.5),
             nn.ReLU(),
             nn.Linear(input_size//2, output_size), # output_size must be set to 3 in config if we use this model for classification
         )
