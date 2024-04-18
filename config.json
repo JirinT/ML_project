@@ -1,5 +1,5 @@
 {
-    "active_user": "remote_pc",
+    "active_user": "jiri",
     "general": {
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
@@ -87,8 +87,8 @@
         },
         "training": {
             "batch_size": 32,
-            "num_epochs": 20,
-            "num_samples_subset": 100000,
+            "num_epochs": 1,
+            "num_samples_subset": 1000,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",

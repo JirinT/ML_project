@@ -16,6 +16,7 @@ from torchviz import make_dot
 from datetime import datetime
 from torchvision import models
 from torch.utils.data import DataLoader
+from collections import defaultdict
 
 from MultiHeadNetwork import MultiHeadNetwork
 from torchvision.transforms import transforms
@@ -217,6 +218,51 @@ def compute_losses(model, images, labels, config, criterion, device):
 
     return total_loss, losses, pred_heads
 
+def show_distribution(train_subset, val_subset, test_subset):
+    target_dict = defaultdict(int) 
+    for _, label in train_subset:
+        label_indices = tuple(label.tolist())  # Convert one-hot encoded labels to class indices and create a tuple
+        target_dict[label_indices] += 1
+    
+    target_dict = {key: target_dict[key] for key in sorted(target_dict)}
+    total = sum(target_dict.values())
+    target_dict = {key: value/total for key, value in target_dict.items()}
+    plt.figure()
+    keys_str = [str(key) for key in target_dict.keys()]
+    plt.bar(keys_str, target_dict.values(), color='skyblue')
+    plt.xticks(range(len(keys_str)), range(1, len(keys_str) + 1))
+    plt.title("Distribution of classes in the TRAINING subset")
+
+    target_dict = defaultdict(int) 
+    for _, label in val_subset:
+        label_indices = tuple(label.tolist())  # Convert one-hot encoded labels to class indices and create a tuple
+        target_dict[label_indices] += 1
+    
+    target_dict = {key: target_dict[key] for key in sorted(target_dict)}
+    total = sum(target_dict.values())
+    target_dict = {key: value/total for key, value in target_dict.items()}
+    plt.figure()
+    keys_str = [str(key) for key in target_dict.keys()]
+    plt.bar(keys_str, target_dict.values(), color='skyblue')
+    plt.xticks(range(len(keys_str)), range(1, len(keys_str) + 1))
+    plt.title("Distribution of classes in the VALIDATION subset")
+
+    target_dict = defaultdict(int)
+    for _, label in test_subset:
+        label_indices = tuple(label.tolist())
+        target_dict[label_indices] += 1
+
+    target_dict = {key: target_dict[key] for key in sorted(target_dict)}
+    total = sum(target_dict.values())
+    target_dict = {key: value/total for key, value in target_dict.items()}
+    plt.figure()
+    keys_str = [str(key) for key in target_dict.keys()]
+    plt.bar(keys_str, target_dict.values(), color='skyblue')
+    plt.xticks(range(len(keys_str)), range(1, len(keys_str) + 1))
+    plt.title("Distribution of classes in the TEST subset")
+    plt.show()
+
+
 def train():
     # Train the model
     total_step_train = len(train_loader.dataset)
@@ -283,7 +329,7 @@ def train():
                     file.write(f"Epoch [{epoch+1}/{num_epochs}], Step [{train_idx+1}/{total_step_train}], Loss: {total_loss.item():.4f}\n")
 
         # Validate the model
-        model.eval() 
+        model.eval()
         with torch.no_grad():
             for (images, labels) in val_loader:
                 images = images.to(device)
@@ -413,6 +459,9 @@ if __name__ == "__main__":
     train_subset = Subset(train_set, range(num_samples_train_subset))
     val_subset = Subset(val_set, range(num_samples_val_subset))
     test_subset = Subset(test_set, range(num_samples_test_subset))
+
+    # Show the distribution of the classes in the subsets
+    show_distribution(train_subset, val_subset, test_subset)
 
     # Normalize the data
     if config["cnn"]["training"]["normalization"]["use"]:
