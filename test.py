@@ -144,12 +144,13 @@ def test_model(model, test_loader, device, config):
             for i in range(len(correct_list)):
                 heads_test_acc[i] = correct_list[i] / len(test_loader.dataset)
             total_accuracy = testCorrect_total / len(test_loader.dataset)
+            avgHeadAcc = sum(heads_test_acc) / len(heads_test_acc)
 
             if config["general"]["log_confusion_matrix"]:
                 print("Creating confusion matrix...")
                 conf_matrix(pred_labels, true_labels)
 
-            return total_accuracy, heads_test_acc
+            return avgHeadAcc, heads_test_acc
         else:
             accuracy = correct / len(test_loader.dataset)
             return accuracy

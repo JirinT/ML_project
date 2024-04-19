@@ -401,8 +401,10 @@ def train():
 
         avgTrainLoss = totalTrainLoss / total_step_train
         avgValLoss = totalValLoss / total_step_val
-        avgValLoss_heads = [total / total_step_val for total in totalValLoss_heads]
-        avgTrainLoss_heads = [total / total_step_train for total in totalTrainLoss_heads]
+        avgValLoss_heads = [total / total_step_val for total in totalValLoss_heads] # average val loss for each head
+        avgTrainLoss_heads = [total / total_step_train for total in totalTrainLoss_heads] # average train loss for each head
+        avgHeadValLoss = sum(avgValLoss_heads) / len(avgValLoss_heads) # average val loss for all heads
+        avgHeadTrainLoss = sum(avgTrainLoss_heads) / len(avgTrainLoss_heads) # average train loss for all heads
 
         if config["cnn"]["model"]["type"]["multihead"]:
             # train accuracies:
@@ -410,12 +412,13 @@ def train():
             # train accuracies for each head:
             for i in range(len(trainCorrect_list)):
                 heads_train_acc[i] = trainCorrect_list[i] / total_step_train
-
+            avgHeadTrainAcc = sum(heads_train_acc) / len(heads_train_acc)
             # val accuracies:
             val_acc = valCorrect_total / total_step_val # val_acc is the overall accuracy predicting all 4 heads
             # val accuracies for each head:
             for i in range(len(valCorrect_list)):
                 heads_val_acc[i] = valCorrect_list[i] / total_step_val
+            avgHeadValAcc = sum(heads_val_acc) / len(heads_val_acc) # average val accuracy for all heads
 
         else:
             train_acc = trainCorrect / total_step_train
@@ -426,10 +429,10 @@ def train():
             best_model = copy.deepcopy(model)
 
         # Logs
-        loss_dict["train_loss"].append(avgTrainLoss)
-        loss_dict["train_acc"].append(train_acc)
-        loss_dict["val_loss"].append(avgValLoss)
-        loss_dict["val_acc"].append(val_acc)
+        loss_dict["train_loss"].append(avgHeadTrainLoss)
+        loss_dict["train_acc"].append(avgHeadTrainAcc)
+        loss_dict["val_loss"].append(avgHeadValLoss)
+        loss_dict["val_acc"].append(avgHeadValAcc)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"Epoch: {epoch+1}/{num_epochs}\n")
             file.write(f"\tTrain loss: {avgTrainLoss:.4f}, Val loss: {avgValLoss:.4f}\n")
