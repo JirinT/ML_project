@@ -490,8 +490,9 @@ if __name__ == "__main__":
         val_subset = Subset(val_set, range(num_samples_val_subset))
         test_subset = Subset(test_set, range(num_samples_test_subset))
 
-    # Show the distribution of the classes in the subsets
-    show_distribution(train_subset, val_subset, test_subset)
+    if config["general"]["show_distribution"]:
+        # Show the distribution of the classes in the subsets
+        show_distribution(train_subset, val_subset, test_subset)
 
     # Normalize the data
     if config["cnn"]["training"]["normalization"]["use"]:

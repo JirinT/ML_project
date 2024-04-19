@@ -2,6 +2,7 @@
     "active_user": "jiri",
     "general": {
         "use_stratify": false,
+        "show_distribution": false,
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
