@@ -132,7 +132,7 @@ def test_model(model, test_loader, device, config):
 
                 for i in range(len(pred_heads)):
                     correct_list[i] += (pred_heads[i].argmax(1) == labels[:,i*3:(i+1)*3].argmax(1)).type(torch.float).sum().item()
-
+                    
                 comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
                 testCorrect_total += torch.sum(comparison).item()
             else:

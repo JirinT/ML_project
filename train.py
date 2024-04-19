@@ -42,6 +42,34 @@ def plot_learning_curve(loss_dict, plot_folder_training):
     plt.legend(loc="lower left")
     plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
 
+def get_mean_std(loader):
+    print("Computing mean and std...")
+    num_pixels = 0
+    mean = 0.0
+    std = 0.0
+    for images, _ in loader:
+        batch_size, num_channels, height, width = images.shape
+        num_pixels += batch_size * height * width
+        mean += images.mean(axis=(0, 2, 3)).sum()
+        std += images.std(axis=(0, 2, 3)).sum()
+
+    mean /= num_pixels
+    std /= num_pixels
+
+    return mean, std
+
+def create_folders_logging(config):
+    now = datetime.now()
+    now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
+    log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
+    os.makedirs(log_folder_training, exist_ok=True)
+    plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
+    os.makedirs(plot_folder_training, exist_ok=True)
+    model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
+    os.makedirs(plot_folder_training, exist_ok=True)
+
+    return log_folder_training, plot_folder_training, model_folder_training
+
 def show_histogram(loader, config):
     if config["cnn"]["model"]["type"]["multihead"]:
         # now we need to count the amount of samples for each class for each head
@@ -263,7 +291,6 @@ def show_distribution(train_subset, val_subset, test_subset):
     plt.title("Distribution of classes in the TEST subset")
     plt.show()
 
-
 def train():
     # Train the model
     total_step_train = len(train_loader.dataset)
@@ -415,8 +442,8 @@ if __name__ == "__main__":
     user = config["active_user"]
     data_path = config["general"]["data_paths"][user]
 
-    # Create folders for logging
-    log_folder_training, plot_folder_training, model_folder_training = create_folders_for_logging(config)
+    # create folders for logging
+    log_folder_training, plot_folder_training, model_folder_training = create_folders_logging(config)
 
     # Save the config to a text file
     filename_config = os.path.join(log_folder_training, "config.txt")
@@ -431,17 +458,16 @@ if __name__ == "__main__":
     train_split = config["cnn"]["training"]["train_split"]
     val_split = config["cnn"]["training"]["val_split"]
     test_split = config["cnn"]["training"]["test_split"]
-    lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
     num_workers = config["cnn"]["training"]["num_workers"]
     num_classes = config["cnn"]["model"]["num_classes"]
 
-    # Initialize dataset and data loader
     transform = transforms.Compose([
         SimplePreprocessor(
-        width=config["preprocessor"]["resize"]["width"], 
-        height=config["preprocessor"]["resize"]["height"]
+            width=config["preprocessor"]["resize"]["width"],
+            height=config["preprocessor"]["resize"]["height"]
         ),
-        transforms.ToTensor()
+        transforms.ToTensor(),
+        transforms.Resize((config["preprocessor"]["resize"]["width"], config["preprocessor"]["resize"]["height"]))
     ])
     print("Loading dataset...")
     dataset = CustomDataset(data_path, transform=transform)
@@ -589,6 +615,7 @@ if __name__ == "__main__":
         os.environ["PATH"] += os.pathsep + config["cnn"]["visualization"]["graphviz_path"]
         images = images.to(device)
         dot = make_dot(model(images), params=dict(best_model.named_parameters()))
+
         dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
 
     # plot the training loss and accuracy

@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "remote_pc",
     "general": {
         "use_stratify": false,
         "show_distribution": false,
@@ -33,10 +33,10 @@
             "width": 224,
             "height": 224
         },
-        "crop_size": 244,
+        "crop_size": 300,
         "setting": {
             "crop": true,
-            "resize": true,
+            "resize": false,
             "rgb2gray": false,
             "rgb2lab": false,
             "clahe": false,
@@ -79,7 +79,7 @@
             },
             "num_heads": 4,
             "num_classes": 3,
-            "drop_out_rate": 0.3,
+            "dropout_rate": 0.5,
             "regularization":{
                 "use": false,
                 "lambda": 0.01,
@@ -88,11 +88,13 @@
             }
         },
         "training": {
-            "batch_size": 32,
-            "num_epochs": 1,
-            "num_samples_subset": 1000,
+            "batch_size": 64,
+            "compute_new_mean_std": false,
+            "num_epochs": 30,
+            "num_samples_subset": 200000,
+            "num_workers": 4,
             "learning_rate": 0.001,
-            "loss_function": "1",
+            "loss_function": "4",
             "optimizer": "1",
             "print_step": 10000,
             "shuffle": true,

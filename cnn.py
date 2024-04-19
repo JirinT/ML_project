@@ -11,6 +11,7 @@ class CNN(nn.Module):
         input_height = config["preprocessor"]["resize"]["height"]
         output_size = config["cnn"]["model"]["num_classes"]
         droupout_rate = config["cnn"]["model"]["drop_out_rate"]
+
         self.conv1 = nn.Conv2d(in_channels=num_channels, out_channels=16, kernel_size=3, stride=1, padding=1)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
@@ -28,6 +29,7 @@ class CNN(nn.Module):
             else:
                 width = (width - layer.kernel_size[0] + 2*layer.padding[0]) // layer.stride[0] + 1
                 height = (height - layer.kernel_size[1] + 2*layer.padding[1]) // layer.stride[1] + 1
+
         self.dropout1 = nn.Dropout(p=droupout_rate)
         self.fc1 = nn.Linear(in_features=32*width*height, out_features=256)
         self.relu3 = nn.ReLU()
@@ -56,6 +58,7 @@ class CNN(nn.Module):
         x = self.fc1(x)
         x = self.relu3(x)
         x = self.dropout1(x)
+        
         x = self.dropout2(x)
         x = self.fc2(x)
         output = self.logSoftmax(x)
