@@ -136,7 +136,8 @@ class CustomDataset(Dataset):
             if self.transform:
                 img = self.transform(img)
                 label = torch.tensor(label, dtype=torch.float32)
-                label = label[6:9]
+                if config["cnn"]["model"]["type"]["simple_cnn"]:
+                    label = label[6:9]
 
         except Exception as e:
             print("Error processing image:", e)

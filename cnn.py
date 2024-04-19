@@ -1,19 +1,16 @@
 import torch.nn as nn
 from torch import flatten
-
-
 class CNN(nn.Module):
     def __init__(self, config):
         """
         define the CNN architecture
         """
         super(CNN, self).__init__()
-
         num_channels = 1 if config["preprocessor"]["setting"]["rgb2gray"] == True or config["preprocessor"]["setting"]["rgb2lab"] == True else 3
         input_width = config["preprocessor"]["resize"]["width"]
         input_height = config["preprocessor"]["resize"]["height"]
         output_size = config["cnn"]["model"]["num_classes"]
-        droupout_rate = config["cnn"]["model"]["dropout_rate"]
+        droupout_rate = config["cnn"]["model"]["drop_out_rate"]
 
         self.conv1 = nn.Conv2d(in_channels=num_channels, out_channels=16, kernel_size=3, stride=1, padding=1)
         self.relu1 = nn.ReLU()
@@ -40,13 +37,12 @@ class CNN(nn.Module):
         self.dropout2 = nn.Dropout(p=droupout_rate)
         self.fc2 = nn.Linear(256, output_size)
         self.logSoftmax = nn.LogSoftmax(dim=1)
-        
+
     def forward(self, x):
         """
         forward pass of the CNN
         Args:
             x (torch.Tensor): The input data.
-
         """
         x = self.conv1(x)
         x = self.relu1(x)
@@ -62,7 +58,7 @@ class CNN(nn.Module):
         x = self.fc1(x)
         x = self.relu3(x)
         x = self.dropout1(x)
-
+        
         x = self.dropout2(x)
         x = self.fc2(x)
         output = self.logSoftmax(x)

@@ -1,6 +1,8 @@
 {
     "active_user": "remote_pc",
     "general": {
+        "use_stratify": false,
+        "show_distribution": false,
         "csv_file_name": "caxton_dataset_filtered.csv",
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
@@ -16,16 +18,10 @@
             "jan": "./caxton_dataset",
             "leon": "./caxton_dataset",
             "jiri": "/Volumes/Samsung USB",
-            "remote_pc": "./caxton_dataset",
-            "resnet": {
-                "jan": "./caxton_dataset/resnet",
-                "leon": "./caxton_dataset/resnet",
-                "jiri": "/Volumes/Samsung USB/resnet",
-                "remote_pc": "./caxton_dataset/resnet"
-            }
+            "remote_pc": "./caxton_dataset"
         },
         "log_classified_images": false,
-        "log_confusion_matrix": false,
+        "log_confusion_matrix": true,
         "log_histograms": false,
         "save_cv_plot": false,
         "save_model": true,
@@ -53,7 +49,7 @@
             "distance_metric": "euclidean"
         },
         "training": {
-            "num_samples_subset": 100000,
+            "num_samples_subset": 1000,
             "start_idx": null,
             "end_idx": null,
             "test_size": 0.1,
@@ -75,12 +71,20 @@
     },
     "cnn": {
         "model": {
+            "type": {
+                "simple_cnn": false,
+                "resnet18": false,
+                "resnet34": false,
+                "multihead": true
+            },
+            "num_heads": 4,
             "num_classes": 3,
             "dropout_rate": 0.5,
             "regularization":{
+                "use": false,
                 "lambda": 0.01,
-                "l1": false,
-                "l2": false
+                "lasso": false,
+                "ridge": true
             }
         },
         "training": {
@@ -92,17 +96,22 @@
             "learning_rate": 0.001,
             "loss_function": "4",
             "optimizer": "1",
-            "print_step": 100000,
+            "print_step": 10000,
             "shuffle": true,
             "train_split": 0.7,
             "val_split": 0.2,
             "test_split": 0.1,
             "seed": 42,
-            "use_normalization": false,
+            "num_workers": 4,
+            "normalization": {
+                "use": false,
+                "compute_new_mean_std": false,
+                "log_path": "./logs/normalization"
+            },
             "use_weighted_rnd_sampler": false
         },
         "visualization": {
-            "graphviz_path": "/usr/local/bin"
-        } 
+            "graphviz_path": "./packages/Graphviz/bin/"
+        }
     }
 }
