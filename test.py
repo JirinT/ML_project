@@ -107,7 +107,7 @@ def test_model(model, test_loader, device, config):
         float: The accuracy of the model on the test dataset.
     """
     correct_list = [0, 0, 0, 0]
-    heads_train_acc = [0, 0, 0, 0]
+    heads_test_acc = [0, 0, 0, 0]
     correct = 0
     testCorrect_total = 0
     pred_labels = [torch.empty((0,3)).to(device) for _ in range(config["cnn"]["model"]["num_heads"])]
@@ -142,14 +142,14 @@ def test_model(model, test_loader, device, config):
         
         if config["cnn"]["model"]["type"]["multihead"]:
             for i in range(len(correct_list)):
-                heads_train_acc[i] = correct_list[i] / len(test_loader.dataset)
+                heads_test_acc[i] = correct_list[i] / len(test_loader.dataset)
             total_accuracy = testCorrect_total / len(test_loader.dataset)
 
             if config["general"]["log_confusion_matrix"]:
                 print("Creating confusion matrix...")
                 conf_matrix(pred_labels, true_labels)
 
-            return total_accuracy, heads_train_acc
+            return total_accuracy, heads_test_acc
         else:
             accuracy = correct / len(test_loader.dataset)
             return accuracy

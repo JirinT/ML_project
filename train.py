@@ -446,44 +446,49 @@ if __name__ == "__main__":
     print("Loading dataset...")
     dataset = CustomDataset(data_path, transform=transform)
 
-    # Get the labels from your dataset
-    labels = [label for _, label in dataset]
+    if config["general"]["use_stratify"]:   
+        # Get the labels from your dataset
+        labels = [label for _, label in dataset]
 
-    # Create a StratifiedShuffleSplit object
-    sss = StratifiedShuffleSplit(n_splits=1, train_size=config["cnn"]["training"]["num_samples_subset"], random_state=config["cnn"]["training"]["seed"])
+        # Create a StratifiedShuffleSplit object
+        sss = StratifiedShuffleSplit(n_splits=1, train_size=config["cnn"]["training"]["num_samples_subset"], random_state=config["cnn"]["training"]["seed"])
 
-    # Get the subset indices
-    subset_indices, _ = next(sss.split(range(len(dataset)), labels))
+        # Get the subset indices
+        print("Creating first subset...")
+        subset_indices, _ = next(sss.split(range(len(dataset)), labels))
 
-    # Create the subset
-    subset = Subset(dataset, subset_indices)
+        # Create the subset
+        subset = Subset(dataset, subset_indices)
 
-    # Now split the subset into train, validation, and test sets
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=test_split, random_state=config["cnn"]["training"]["seed"])
-    train_indices, test_indices = next(sss.split(subset_indices, [labels[i] for i in subset_indices]))
+        # Now split the subset into train, validation, and test sets
+        print("Creating second subset...")
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=test_split, random_state=config["cnn"]["training"]["seed"])
+        train_indices, test_indices = next(sss.split(subset_indices, [labels[i] for i in subset_indices]))
 
-    # Split the remaining data into validation and test sets
-    sss = StratifiedShuffleSplit(n_splits=1, test_size=val_split / (1 - test_split), random_state=config["cnn"]["training"]["seed"])
-    val_indices, test_indices = next(sss.split(test_indices, [labels[i] for i in test_indices]))
+        # Split the remaining data into validation and test sets
+        print("Creating third subset...")
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=val_split / (1 - test_split), random_state=config["cnn"]["training"]["seed"])
+        val_indices, test_indices = next(sss.split(test_indices, [labels[i] for i in test_indices]))
 
-    train_subset = Subset(dataset, train_indices)
-    val_subset = Subset(dataset, val_indices)
-    test_subset = Subset(dataset, test_indices)
+        train_subset = Subset(dataset, train_indices)
+        val_subset = Subset(dataset, val_indices)
+        test_subset = Subset(dataset, test_indices)
 
-    # num_samples_train = int(train_split * len(dataset))
-    # num_samples_val = int(val_split * len(dataset))
-    # num_samples_test = int(test_split * len(dataset))
+    else:
+        num_samples_train = int(train_split * len(dataset))
+        num_samples_val = int(val_split * len(dataset))
+        num_samples_test = int(test_split * len(dataset))
 
-    # (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test],
-    #                                    generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
+        (train_set, val_set, test_set) = random_split(dataset, [num_samples_train, num_samples_val, num_samples_test],
+                                        generator=torch.Generator().manual_seed(config["cnn"]["training"]["seed"]))
 
-    # num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
-    # num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
-    # num_samples_test_subset = int(config["cnn"]["training"]["num_samples_subset"] * test_split)
+        num_samples_train_subset = int(config["cnn"]["training"]["num_samples_subset"] * train_split)
+        num_samples_val_subset = int(config["cnn"]["training"]["num_samples_subset"] * val_split)
+        num_samples_test_subset = int(config["cnn"]["training"]["num_samples_subset"] * test_split)
 
-    # train_subset = Subset(train_set, range(num_samples_train_subset))
-    # val_subset = Subset(val_set, range(num_samples_val_subset))
-    # test_subset = Subset(test_set, range(num_samples_test_subset))
+        train_subset = Subset(train_set, range(num_samples_train_subset))
+        val_subset = Subset(val_set, range(num_samples_val_subset))
+        test_subset = Subset(test_set, range(num_samples_test_subset))
 
     # Show the distribution of the classes in the subsets
     show_distribution(train_subset, val_subset, test_subset)
