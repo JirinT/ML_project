@@ -7,7 +7,6 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 from cnn import CNN
 from tqdm import tqdm
@@ -66,35 +65,52 @@ def create_folders_logging(config):
     plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
     os.makedirs(plot_folder_training, exist_ok=True)
     model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
-    os.makedirs(plot_folder_training, exist_ok=True)
+    os.makedirs(model_folder_training, exist_ok=True)
 
     return log_folder_training, plot_folder_training, model_folder_training
 
-def show_histogram(loader, config):
+def show_histogram(loaders, config):
     if config["cnn"]["model"]["type"]["multihead"]:
-        # now we need to count the amount of samples for each class for each head
-        label_counts = [{0: 0, 1: 0, 2: 0} for _ in range(config["cnn"]["model"]["num_heads"])]
-        for _, labels in loader:
-            for i in range(len(label_counts)):
-                for label in labels:
-                    label_counts[i][label.argmax().item()] += 1
+        for loader in loaders:
+            counts_flow_rate = torch.zeros(3)
+            counts_lateral_speed = torch.zeros(3)
+            counts_z_offset = torch.zeros(3)
+            counts_hotend_temperature = torch.zeros(3)
+            for _, labels in loader:
+                flow_rate_labels = labels[:, 0:3]
+                lateral_speed_labels = labels[:, 3:6]
+                z_offset_labels = labels[:, 6:9]
+                hotend_temperature_labels = labels[:, 9:]
+                counts_flow_rate += flow_rate_labels.sum(axis=0)
+                counts_lateral_speed += lateral_speed_labels.sum(axis=0)
+                counts_z_offset += z_offset_labels.sum(axis=0)
+                counts_hotend_temperature += hotend_temperature_labels.sum(axis=0)
+            
+            plt.figure("Histograms for each label", figsize=(13, 8))
+            plt.subplot(2, 2, 1)
+            plt.bar(range(len(counts_flow_rate)), counts_flow_rate)
+            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+            plt.ylabel("Amount of samples")
+            plt.title("Flow Rate")
+
+            plt.subplot(2, 2, 2)
+            plt.bar(range(len(counts_lateral_speed)), counts_lateral_speed)
+            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+            plt.ylabel("Amount of samples")
+            plt.title("Lateral Speed")
+
+            plt.subplot(2, 2, 3)
+            plt.bar(range(len(counts_z_offset)), counts_z_offset)
+            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+            plt.ylabel("Amount of samples")
+            plt.title("Z Offset")
+
+            plt.subplot(2, 2, 4)
+            plt.bar(range(len(counts_hotend_temperature)), counts_hotend_temperature)
+            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+            plt.ylabel("Amount of samples")
+            plt.title("Hotend Temperature")
         
-        labels = list(label_counts[0].keys())
-        counts = list(label_counts[0].values())
-        width = 0.35
-        fig, ax = plt.subplots()
-        ax.bar(np.array(labels) - width, counts, width, label='Head 1')
-        counts = list(label_counts[1].values())
-        ax.bar(np.array(labels), counts, width, label='Head 2')
-        counts = list(label_counts[2].values())
-        ax.bar(np.array(labels) + width, counts, width, label='Head 3')
-        counts = list(label_counts[3].values())
-        ax.bar(np.array(labels) + 2*width, counts, width, label='Head 4')
-        ax.set_xticks([0, 1, 2])
-        ax.set_xticklabels(['Low', 'Good', 'High'])
-        ax.legend()
-        plt.grid(True)
-        plt.title("hovnous")
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_multihead_{timestamp}.png"))
 
@@ -113,7 +129,7 @@ def show_histogram(loader, config):
         plt.title("Z-offset")
         plt.ylabel("Amount of samples")
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{timestamp}.png"))
+        plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{type}_{timestamp}.png"))
 
 def create_folders_for_logging(config):
     now = datetime.now()
@@ -543,7 +559,7 @@ if __name__ == "__main__":
     # Show histogram of the labels:
     if config["general"]["log_histograms"]:
         print("Creating histograms...")
-        show_histogram(train_loader, config)
+        show_histogram([train_loader, val_loader, test_loader], config)
 
     # Choose and Initialize a model
     print("Initializing model...")
