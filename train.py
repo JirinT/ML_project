@@ -196,7 +196,8 @@ def create_weighted_sampler(train_subset, num_classes):
     shuffle = False
     return sampler, shuffle
 
-def apply_regularization(model, loss, lambda_regularization, config):
+def apply_regularization(model, loss, config):
+    lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
     if config["cnn"]["model"]["regularization"]["lasso"]:
         p = 1
     elif config["cnn"]["model"]["regularization"]["ridge"]:
@@ -324,7 +325,7 @@ def train():
                 total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
                 # Apply regularization
                 if config["cnn"]["model"]["regularization"]["use"]:
-                    total_loss = apply_regularization(model, total_loss, lambda_regularization, config)
+                    total_loss = apply_regularization(model, total_loss, config)
                 
                 optimizer.zero_grad() # zero the gradients
                 total_loss.backward() # backpropagation through the whole network
@@ -341,7 +342,7 @@ def train():
                 pred = model(images)
                 loss = criterion(pred, labels) # calculate the loss for the current batch
                 if config["cnn"]["model"]["regularization"]["use"]: # Regularization
-                    loss = apply_regularization(model, loss, lambda_regularization, config)
+                    loss = apply_regularization(model, loss, config)
 
                 # Backward and optimize
                 optimizer.zero_grad()
