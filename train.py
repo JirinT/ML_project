@@ -22,7 +22,7 @@ from MultiHeadNetwork import MultiHeadNetwork
 from torchvision.transforms import transforms
 from datasets.custom_dataset import CustomDataset
 from preprocessing.simple_preprocessor import SimplePreprocessor
-from torchvision.models.feature_extraction import create_feature_extractor
+from torchvision.models.feature_extraction import create_feature_extractor, get_graph_node_names
 from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
 from sklearn.metrics import confusion_matrix
 
@@ -70,7 +70,7 @@ def create_folders_logging(config):
     return log_folder_training, plot_folder_training, model_folder_training
 
 def show_histogram(loaders, config):
-    if config["cnn"]["model"]["type"]["multihead"]:
+    if config["cnn"]["model"]["use_multihead"]:
         for loader in loaders:
             counts_flow_rate = torch.zeros(3)
             counts_lateral_speed = torch.zeros(3)
@@ -256,7 +256,7 @@ def compute_losses(model, images, labels, config, criterion, device):
     pred_heads = [x.to(device) for x in pred_heads]
 
     # Compute the loss for each head and update the head parameters:
-    if config["cnn"]["training"]["loss_function"] != 1:
+    if config["cnn"]["training"]["loss_function"] != "1":
         losses = [criterion(x, labels[:,i*3:(i+1)*3]) for i, x in enumerate([x1, x2, x3, x4])]
     else:
         losses = [criterion(x, labels[:,i*3:(i+1)*3].argmax(1)) for i, x in enumerate([x1, x2, x3, x4])]
@@ -336,7 +336,7 @@ def train():
             images = images.to(device)
             labels = labels.to(device)
             # Forward pass
-            if config["cnn"]["model"]["type"]["multihead"]:
+            if config["cnn"]["model"]["use_multihead"]:
                 # Compute the sum of losses in heads and update the backbone:
                 total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
                 # Apply regularization
@@ -381,7 +381,7 @@ def train():
                 labels = labels.to(device)
 
                 # Forward pass
-                if config["cnn"]["model"]["type"]["multihead"]:
+                if config["cnn"]["model"]["use_multihead"]:
                     total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
 
                     totalValLoss += total_loss.item()
@@ -406,7 +406,7 @@ def train():
         avgHeadValLoss = sum(avgValLoss_heads) / len(avgValLoss_heads) # average val loss for all heads
         avgHeadTrainLoss = sum(avgTrainLoss_heads) / len(avgTrainLoss_heads) # average train loss for all heads
 
-        if config["cnn"]["model"]["type"]["multihead"]:
+        if config["cnn"]["model"]["use_multihead"]:
             # train accuracies:
             train_acc = trainCorrect_total / total_step_train # train_acc is the overall accuracy predicting all 4 heads
             # train accuracies for each head:
@@ -437,7 +437,7 @@ def train():
             file.write(f"Epoch: {epoch+1}/{num_epochs}\n")
             file.write(f"\tTrain loss: {avgTrainLoss:.4f}, Val loss: {avgValLoss:.4f}\n")
             file.write(f"\tTrain accuracy: {train_acc:.4f}, Val accuracy: {val_acc:.4f}\n")
-            if config["cnn"]["model"]["type"]["multihead"]:
+            if config["cnn"]["model"]["use_multihead"]:
                 for i in range(len(heads_train_acc)):
                     file.write(f"\t\tHead {i+1}:\n")
                     file.write(f"\t\t\tTrain loss: {avgTrainLoss_heads[i]:.4f}, Val loss: {avgValLoss_heads[i]:.4f}\n")
@@ -574,13 +574,24 @@ if __name__ == "__main__":
 
     elif config["cnn"]["model"]["type"]["resnet34"]:
         model = models.resnet34(weights=None, num_classes=num_classes).to(device) 
+    
+    elif config["cnn"]["model"]["type"]["resnet50"]:
+        model = models.resnet50(weights=None, num_classes=num_classes).to(device)
+    
+    else:
+        raise ValueError("Model type not supported!")
 
-    elif config["cnn"]["model"]["type"]["multihead"]:
-        shared_backbone = models.resnet18(weights=None, num_classes=num_classes).to(device)
+    if config["cnn"]["model"]["use_multihead"]:
+        shared_backbone = model
         # feature extraction - getting the output layer after convolution layers:
-        return_nodes = {
-        "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
-        }
+        if config["cnn"]["model"]["type"]["resnet18"] or config["cnn"]["model"]["type"]["resnet34"] or config["cnn"]["model"]["type"]["resnet50"]:
+            return_nodes = {
+                "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
+            }
+        elif config["cnn"]["model"]["type"]["simple_cnn"]:
+            return_nodes = {
+                "dropout2": "DropoutLayer2"
+            }
         backbone_last_layer = create_feature_extractor(shared_backbone, return_nodes=return_nodes) # the backbone_last_layer is the output of the last convolutional layer which we feed into each head
         model = MultiHeadNetwork(config, backbone_last_layer).to(device)
 
@@ -616,7 +627,7 @@ if __name__ == "__main__":
 
     # Test the model
     print("Testing started...")
-    if config["cnn"]["model"]["type"]["multihead"]:
+    if config["cnn"]["model"]["use_multihead"]:
         test_accuracy, heads_test_acc = test_model(best_model, test_loader, device, config)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"\tTest accuracy: {test_accuracy * 100:.2f}%\n")

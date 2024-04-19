@@ -21,8 +21,8 @@
             "remote_pc": "./caxton_dataset"
         },
         "log_classified_images": false,
-        "log_confusion_matrix": true,
-        "log_histograms": true,
+        "log_confusion_matrix": false,
+        "log_histograms": false,
         "save_cv_plot": false,
         "save_model": true,
         "show_sample_images": false,
@@ -71,11 +71,12 @@
     },
     "cnn": {
         "model": {
+            "use_multihead": true,
             "type": {
-                "simple_cnn": false,
+                "simple_cnn": true,
                 "resnet18": false,
                 "resnet34": false,
-                "multihead": true
+                "resnet50": false
             },
             "num_heads": 4,
             "num_classes": 3,
@@ -90,8 +91,9 @@
         "training": {
             "batch_size": 32,
             "compute_new_mean_std": false,
-            "num_epochs": 30,
+            "num_epochs": 20,
             "num_samples_subset": 200000,
+            "num_workers": 4,
             "learning_rate": 0.001,
             "loss_function": "1",
             "optimizer": "1",

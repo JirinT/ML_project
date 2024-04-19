@@ -10,7 +10,7 @@ class CNN(nn.Module):
         input_width = config["preprocessor"]["resize"]["width"]
         input_height = config["preprocessor"]["resize"]["height"]
         output_size = config["cnn"]["model"]["num_classes"]
-        droupout_rate = config["cnn"]["model"]["drop_out_rate"]
+        droupout_rate = config["cnn"]["model"]["dropout_rate"]
 
         self.conv1 = nn.Conv2d(in_channels=num_channels, out_channels=16, kernel_size=3, stride=1, padding=1)
         self.relu1 = nn.ReLU()

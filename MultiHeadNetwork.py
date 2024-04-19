@@ -5,13 +5,23 @@ class MultiHeadNetwork(nn.Module):
     def __init__(self, config, backbone_last_layer):
         super().__init__()
 
+        self.config = config
+
         # shared layers:
         self.shared_layers = backbone_last_layer
         # number of heads:
         self.num_heads = config["cnn"]["model"]["num_heads"]
         # define head layers:
-        # the input_size is the output of last resnet layer, for resnet18 and resnet32 it is 512, for resnet 50 its 2048
-        self.heads = nn.ModuleList([self.output_head_nn(input_size=512, output_size=config["cnn"]["model"]["num_classes"]) for _ in range(self.num_heads)])
+        # the input_size is the output of last conv resnet layer, for resnet18 and resnet34 it is 512, for resnet 50 its 2048
+        if config["cnn"]["model"]["type"]["resnet18"] or config["cnn"]["model"]["type"]["resnet34"]:
+            input_size = 512
+        elif config["cnn"]["model"]["type"]["resnet50"]:
+            input_size = 2048
+        elif config["cnn"]["model"]["type"]["simple_cnn"]:
+            input_size = 256
+        else:
+            raise ValueError("Unknown model type")
+        self.heads = nn.ModuleList([self.output_head_nn(input_size=input_size, output_size=config["cnn"]["model"]["num_classes"]) for _ in range(self.num_heads)])
 
     def output_head_nn(self, input_size, output_size):
         head = nn.Sequential(
@@ -26,7 +36,10 @@ class MultiHeadNetwork(nn.Module):
         # first pass through shared layers:
         x = self.shared_layers(x)
 
-        x = x['AdaptiveAvgPool2d(output_size=(1, 1))'] # shape = (batch_size, 512, 1, 1)
+        if self.config["cnn"]["model"]["type"]["resnet18"] or self.config["cnn"]["model"]["type"]["resnet34"] or self.config["cnn"]["model"]["type"]["resnet50"]:
+            x = x['AdaptiveAvgPool2d(output_size=(1, 1))'] # shape = (batch_size, 512, 1, 1)
+        elif self.config["cnn"]["model"]["type"]["simple_cnn"]:
+            x = x['DropoutLayer2']
         x = x.squeeze() # shape = (batch_size, 512)
 
         # pass through each head:
