@@ -435,8 +435,8 @@ def train():
         loss_dict["val_acc"].append(avgHeadValAcc)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"Epoch: {epoch+1}/{num_epochs}\n")
-            file.write(f"\tTrain loss: {avgTrainLoss:.4f}, Val loss: {avgValLoss:.4f}\n")
-            file.write(f"\tTrain accuracy: {train_acc:.4f}, Val accuracy: {val_acc:.4f}\n")
+            file.write(f"\tTrain loss: {loss_dict["train_loss"]:.4f}, Val loss: {loss_dict['val_loss']:.4f}\n")
+            file.write(f"\tTrain accuracy: {loss_dict['train_acc']:.4f}, Val accuracy: {loss_dict['val_acc']:.4f}\n")
             if config["cnn"]["model"]["use_multihead"]:
                 for i in range(len(heads_train_acc)):
                     file.write(f"\t\tHead {i+1}:\n")
