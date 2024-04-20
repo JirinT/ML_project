@@ -118,7 +118,7 @@ def test_model(model, test_loader, device, config):
             images = images.to(device)
             labels = labels.to(device) # labels is a tensor of shape (batch_size x 12)
 
-            if config["cnn"]["model"]["type"]["multihead"]:
+            if config["cnn"]["model"]["use_multihead"]:
                 x1, x2, x3, x4 = model(images) # x1, x2, x3, x4 are outputs of last linear layer - raw data
                 raw_predictions = [x1, x2, x3, x4] # raw_predictions are outputs of last linear layer, before LogSoftMax
 
@@ -140,7 +140,7 @@ def test_model(model, test_loader, device, config):
                 correct += (pred.argmax(1) == labels.argmax(1)).type(
                 torch.float).sum().item()
         
-        if config["cnn"]["model"]["type"]["multihead"]:
+        if config["cnn"]["model"]["use_multihead"]:
             for i in range(len(correct_list)):
                 heads_test_acc[i] = correct_list[i] / len(test_loader.dataset)
             total_accuracy = testCorrect_total / len(test_loader.dataset)
