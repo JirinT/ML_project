@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 
-from cnn import CNN
+from cnn import CNN2, CNN4
 from tqdm import tqdm
 from test import test_model
 from torchviz import make_dot
@@ -566,8 +566,11 @@ if __name__ == "__main__":
 
     # Choose and Initialize a model
     print("Initializing model...")
-    if config["cnn"]["model"]["type"]["simple_cnn"]:
-        model = CNN(config=config).to(device)
+    if config["cnn"]["model"]["type"]["cnn2"]:
+        model = CNN2(config=config).to(device)
+
+    elif config["cnn"]["model"]["type"]["cnn4"]:
+        model = CNN4(config=config).to(device)
 
     elif config["cnn"]["model"]["type"]["resnet18"]:
         model = models.resnet18(weights=None, num_classes=num_classes).to(device)
@@ -588,7 +591,11 @@ if __name__ == "__main__":
             return_nodes = {
                 "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
             }
-        elif config["cnn"]["model"]["type"]["simple_cnn"]:
+        elif config["cnn"]["model"]["type"]["cnn2"]:
+            return_nodes = {
+                "dropout2": "DropoutLayer2"
+            }
+        elif config["cnn"]["model"]["type"]["cnn4"]:
             return_nodes = {
                 "dropout2": "DropoutLayer2"
             }

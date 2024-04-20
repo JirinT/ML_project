@@ -73,7 +73,8 @@
         "model": {
             "use_multihead": true,
             "type": {
-                "simple_cnn": true,
+                "cnn2": false,
+                "cnn4": true,
                 "resnet18": false,
                 "resnet34": false,
                 "resnet50": false
@@ -106,7 +107,8 @@
             "normalization": {
                 "use": false,
                 "compute_new_mean_std": false,
-                "log_path": "./logs/normalization"
+                "log_path": "./logs/normalization",
+                "use_batch_normalization": false
             },
             "use_weighted_rnd_sampler": false
         },
