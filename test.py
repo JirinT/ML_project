@@ -9,7 +9,7 @@ import torch.nn as nn
 from datasets.custom_dataset import CustomDataset
 from preprocessing.simple_preprocessor import SimplePreprocessor
 
-from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, f1_score
 import matplotlib.pyplot as plt
 from datetime import datetime
 import numpy as np
@@ -60,6 +60,24 @@ def decode_predictions(pred_heads_log_prob):
         pred_heads_list.append(pred_head)
 
     return pred_heads_list
+
+def compute_f1_score(outputs, labels):
+    y_true = [[] for _ in range(config["cnn"]["model"]["num_heads"])]
+    y_pred = [[] for _ in range(config["cnn"]["model"]["num_heads"])]
+
+    decoded_labels = decode_labels(labels.cpu().numpy()) # makes a list of 4 arrays of shape (batch_size, 1)
+
+    for i, output in enumerate(outputs):
+            _, predicted = torch.max(output, 1)
+            y_pred[i].extend(predicted.tolist())
+            y_true[i].extend(decoded_labels[i].tolist())
+
+    f1_score_head1 = f1_score(y_true[0], y_pred[0], average="micro")
+    f1_score_head2 = f1_score(y_true[1], y_pred[1], average="micro")
+    f1_score_head3 = f1_score(y_true[2], y_pred[2], average="micro")
+    f1_score_head4 = f1_score(y_true[3], y_pred[3], average="micro")
+
+    return f1_score_head1, f1_score_head2, f1_score_head3, f1_score_head4
 
 def conf_matrix(outputs, labels):
     y_true = [[] for _ in range(config["cnn"]["model"]["num_heads"])]
@@ -146,13 +164,17 @@ def test_model(model, test_loader, device, config):
             total_accuracy = testCorrect_total / len(test_loader.dataset)
             avgHeadAcc = sum(heads_test_acc) / len(heads_test_acc)
 
+            f1_score_head1, f1_score_head2, f1_score_head3, f1_score_head4 = compute_f1_score(pred_labels, true_labels)
+            avg_f1_score = (f1_score_head1 + f1_score_head2 + f1_score_head3 + f1_score_head4) / 4
+
             if config["general"]["log_confusion_matrix"]:
                 print("Creating confusion matrix...")
                 conf_matrix(pred_labels, true_labels)
 
-            return avgHeadAcc, heads_test_acc
+            return avgHeadAcc, heads_test_acc, avg_f1_score
         else:
             accuracy = correct / len(test_loader.dataset)
+
             return accuracy
 
 if __name__ == "__main__":
@@ -199,5 +221,6 @@ if __name__ == "__main__":
     model = torch.load("./logs/models/2024-04-14_19-14-33/model.pth").to(device)
 
     print("Testing the model...")
-    accuracy,_ = test_model(model, test_loader, device, config)
+    accuracy,_, f1_score = test_model(model, test_loader, device, config)
     print(f'Accuracy: {accuracy * 100:.2f}%')
+    print(f'F1 Score: {f1_score}')

@@ -435,8 +435,8 @@ def train():
         loss_dict["val_acc"].append(avgHeadValAcc)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"Epoch: {epoch+1}/{num_epochs}\n")
-            file.write(f"\tTrain loss: {loss_dict["train_loss"]:.4f}, Val loss: {loss_dict['val_loss']:.4f}\n")
-            file.write(f"\tTrain accuracy: {loss_dict['train_acc']:.4f}, Val accuracy: {loss_dict['val_acc']:.4f}\n")
+            file.write(f"\tTrain loss: {loss_dict['train_loss'][-1]:.4f}, Val loss: {loss_dict['val_loss'][-1]:.4f}\n")
+            file.write(f"\tTrain accuracy: {loss_dict['train_acc'][-1]:.4f}, Val accuracy: {loss_dict['val_acc'][-1]:.4f}\n")
             if config["cnn"]["model"]["use_multihead"]:
                 for i in range(len(heads_train_acc)):
                     file.write(f"\t\tHead {i+1}:\n")
@@ -635,9 +635,10 @@ if __name__ == "__main__":
     # Test the model
     print("Testing started...")
     if config["cnn"]["model"]["use_multihead"]:
-        test_accuracy, heads_test_acc = test_model(best_model, test_loader, device, config)
+        test_accuracy, heads_test_acc, test_f1_score = test_model(best_model, test_loader, device, config)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"\tTest accuracy: {test_accuracy * 100:.2f}%\n")
+            file.write(f"\tTest F1 score: {test_f1_score:.2f}\n")
             for i in range(len(heads_test_acc)):
                 file.write(f"\t\tTest accuracy head {i+1}: {heads_test_acc[i] * 100:.2f}%\n")
         print(f"Test accuracy: {test_accuracy * 100:.2f}%")
