@@ -9,3 +9,4 @@ logs/*
 testing.py
 *.jpg
 __pycache__
+python3
