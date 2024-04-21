@@ -300,6 +300,12 @@ if __name__ == "__main__":
     criterion = loss_functions[config["cnn"]["training"]["loss_function"]].to(device)
     optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
 
+    # Load the model and optimizer if continue_training is set to True
+    if config["cnn"]["training"]["continue_training"]:
+        print("Loading model...")
+        model_path = config["general"]["model_path_to_load"]
+        model, optimizer = model_utils.load_model(model, optimizer, model_path)
+
     loss_dict = {
         "train_loss": [],
         "train_acc": [],

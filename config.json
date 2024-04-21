@@ -7,6 +7,7 @@
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
         "model_path": "./logs/models/",
+        "model_path_to_load": "./logs/models/2024-04-21_12-58-04/model.pth",
         "sample_img_path": "./logs/sample_images/",
         "classified_images_path":{
             "correct": "./logs/classified_images/correct",
@@ -92,7 +93,7 @@
         "training": {
             "batch_size": 32,
             "compute_new_mean_std": false,
-            "num_epochs": 2,
+            "num_epochs": 1,
             "num_samples_subset": 200,
             "num_workers": 4,
             "learning_rate": 0.001,
@@ -110,7 +111,8 @@
                 "log_path": "./logs/normalization",
                 "use_batch_normalization": false
             },
-            "use_weighted_rnd_sampler": false
+            "use_weighted_rnd_sampler": false,
+            "continue_training": true
         },
         "visualization": {
             "graphviz_path": "./packages/Graphviz/bin/"

@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # Load the model
     model = model_utils.init_model(num_classes)
 
-    model_path = "./logs/models/2024-04-21_12-58-04/model.pth"
+    model_path = config["general"]["model_path_to_load"]
     model = model_utils.load_model(model, optimizer=None, path=model_path)
 
     print("Testing the model...")
