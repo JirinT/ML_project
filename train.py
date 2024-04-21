@@ -2,311 +2,24 @@ import os
 import json
 import copy
 import time
+
 import torch
-import numpy as np
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
 
-from cnn import CNN2, CNN4
 from tqdm import tqdm
 from test import test_model
 from torchviz import make_dot
-from datetime import datetime
-from torchvision import models
 from torch.utils.data import DataLoader
-from collections import defaultdict
 from sklearn.model_selection import StratifiedShuffleSplit
 
-from MultiHeadNetwork import MultiHeadNetwork
-from torchvision.transforms import transforms
 from datasets.custom_dataset import CustomDataset
+from folder_functions import create_folders_logging
 from preprocessing.simple_preprocessor import SimplePreprocessor
-from torchvision.models.feature_extraction import create_feature_extractor, get_graph_node_names
-from torch.utils.data import DataLoader, random_split, Subset, WeightedRandomSampler
-from sklearn.metrics import confusion_matrix
+from torch.utils.data import DataLoader, random_split, Subset
+from torchvision.transforms import transforms
+from utils import Visualization, PreprocessingUtils, ModelUtils
 
-
-
-def plot_learning_curve(loss_dict, plot_folder_training):
-    plt.style.use("ggplot")
-    plt.figure()
-    plt.plot(loss_dict["train_loss"], label="train_loss")
-    plt.plot(loss_dict["val_loss"], label="val_loss")
-    plt.plot(loss_dict["train_acc"], label="train_acc")
-    plt.plot(loss_dict["val_acc"], label="val_acc")
-    plt.title("Training Loss and Accuracy on Dataset")
-    plt.xlabel("Epoch #")
-    plt.ylabel("Loss/Accuracy")
-    plt.legend(loc="lower left")
-    plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
-
-def get_mean_std(loader):
-    print("Computing mean and std...")
-    num_pixels = 0
-    mean = 0.0
-    std = 0.0
-    for images, _ in loader:
-        batch_size, num_channels, height, width = images.shape
-        num_pixels += batch_size * height * width
-        mean += images.mean(axis=(0, 2, 3)).sum()
-        std += images.std(axis=(0, 2, 3)).sum()
-
-    mean /= num_pixels
-    std /= num_pixels
-
-    return mean, std
-
-def create_folders_logging(config):
-    now = datetime.now()
-    now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
-    log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
-    os.makedirs(log_folder_training, exist_ok=True)
-    plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
-    os.makedirs(plot_folder_training, exist_ok=True)
-    model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
-    os.makedirs(model_folder_training, exist_ok=True)
-
-    return log_folder_training, plot_folder_training, model_folder_training
-
-def show_histogram(loaders, config):
-    if config["cnn"]["model"]["use_multihead"]:
-        for loader in loaders:
-            counts_flow_rate = torch.zeros(3)
-            counts_lateral_speed = torch.zeros(3)
-            counts_z_offset = torch.zeros(3)
-            counts_hotend_temperature = torch.zeros(3)
-            for _, labels in loader:
-                flow_rate_labels = labels[:, 0:3]
-                lateral_speed_labels = labels[:, 3:6]
-                z_offset_labels = labels[:, 6:9]
-                hotend_temperature_labels = labels[:, 9:]
-                counts_flow_rate += flow_rate_labels.sum(axis=0)
-                counts_lateral_speed += lateral_speed_labels.sum(axis=0)
-                counts_z_offset += z_offset_labels.sum(axis=0)
-                counts_hotend_temperature += hotend_temperature_labels.sum(axis=0)
-            
-            plt.figure("Histograms for each label", figsize=(13, 8))
-            plt.subplot(2, 2, 1)
-            plt.bar(range(len(counts_flow_rate)), counts_flow_rate)
-            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
-            plt.ylabel("Amount of samples")
-            plt.title("Flow Rate")
-
-            plt.subplot(2, 2, 2)
-            plt.bar(range(len(counts_lateral_speed)), counts_lateral_speed)
-            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
-            plt.ylabel("Amount of samples")
-            plt.title("Lateral Speed")
-
-            plt.subplot(2, 2, 3)
-            plt.bar(range(len(counts_z_offset)), counts_z_offset)
-            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
-            plt.ylabel("Amount of samples")
-            plt.title("Z Offset")
-
-            plt.subplot(2, 2, 4)
-            plt.bar(range(len(counts_hotend_temperature)), counts_hotend_temperature)
-            plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
-            plt.ylabel("Amount of samples")
-            plt.title("Hotend Temperature")
-        
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_multihead_{timestamp}.png"))
-
-    else:
-        label_counts = {0: 0, 1: 0, 2: 0}
-        for _, labels in loader:
-            for label in labels:
-                label_counts[label.argmax().item()] += 1
-
-        labels = list(label_counts.keys())
-        counts = list(label_counts.values())
-
-        plt.bar(labels, counts, color='skyblue')
-        plt.grid(True)
-        plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
-        plt.title("Z-offset")
-        plt.ylabel("Amount of samples")
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        plt.savefig(os.path.join(config["general"]["histogram_path"], f"histogram_separate_{type}_{timestamp}.png"))
-
-def create_folders_for_logging(config):
-    now = datetime.now()
-    now_formated = now.strftime("%Y-%m-%d_%H-%M-%S")
-    log_folder_training = os.path.join(config["general"]["log_path"], now_formated)
-    os.makedirs(log_folder_training, exist_ok=True)
-    plot_folder_training = os.path.join(config["general"]["plot_path"], now_formated)
-    os.makedirs(plot_folder_training, exist_ok=True)
-    model_folder_training = os.path.join(config["general"]["model_path"], now_formated)
-    os.makedirs(model_folder_training, exist_ok=True)
-    return log_folder_training, plot_folder_training, model_folder_training
-
-def normalize_data(train_subset, batch_size, shuffle, dataset, num_workers, config):
-
-    def get_mean_std(loader):
-        mean = 0
-        std = 0
-        num_pixels = 0
-        for images, _ in loader:
-            mean += torch.mean(images)
-            std += torch.std(images)
-            num_pixels += images.numel()
-        mean /= num_pixels
-        std /= num_pixels
-        return mean, std
-
-    log_dir = config["cnn"]["training"]["normalization"]["log_path"]
-    file_name = "mean_std.json"
-    file_path = os.path.join(log_dir, file_name)
-
-    train_loader_for_normalization = DataLoader(train_subset, batch_size=batch_size, shuffle=shuffle, collate_fn=dataset.custom_collate_fn, num_workers=num_workers)
-    if config["cnn"]["training"]["normalization"]["compute_new_mean_std"] or not os.path.exists(file_path):
-        mean, std = get_mean_std(train_loader_for_normalization)
-
-        mean_std_dict = {
-            "mean": mean.tolist(),
-            "std": std.tolist()
-        }
-
-        os.makedirs(log_dir, exist_ok=True) # Check if the directory exists and create it if it doesn't
-        with open (file_path, "w+") as file: # Save the mean and std to a file
-            json.dump(mean_std_dict, file)
-
-    else:
-        with open(file_path, "r") as file:
-            mean_std_dict = json.load(file)
-            mean = mean_std_dict["mean"]
-            std = mean_std_dict["std"]
-
-    # include the normalization transform in the transform pipeline
-    transform = transforms.Compose([
-        SimplePreprocessor(
-        width=config["preprocessor"]["resize"]["width"], 
-        height=config["preprocessor"]["resize"]["height"]
-        ),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std) # normalize the images
-    ])
-    # Apply the transform to the datasets
-    train_subset.dataset.transform = transform
-    val_subset.dataset.transform = transform
-    test_subset.dataset.transform = transform
-
-    return train_subset, val_subset, test_subset
-
-def create_weighted_sampler(train_subset, num_classes):
-    # Calculate the class frequencies
-    label_counts = [0] * num_classes # [0, 0, 0] - low, good, high
-    for _, label in train_subset:
-        label_counts[label.argmax().item()] += 1 
-
-    # Calculate the weight for each sample based on its class
-    weights = []
-    for _, label in train_subset:
-        label = label.argmax().item()
-        weights.append(1.0 / label_counts[label])
-
-    # Create a WeightedRandomSampler with the calculated weights
-    sampler = WeightedRandomSampler(weights, len(weights), replacement=False)
-    shuffle = False
-    return sampler, shuffle
-
-def apply_regularization(model, loss, config):
-    lambda_regularization = config["cnn"]["model"]["regularization"]["lambda"]
-    if config["cnn"]["model"]["regularization"]["lasso"]:
-        p = 1
-    elif config["cnn"]["model"]["regularization"]["ridge"]:
-        p = 2
-    # L1 regularization term - LASSO
-    l1 = torch.tensor(0.)
-    l1 = l1.to(device)
-    for param in model.parameters():
-        l1 += torch.norm(param, p=1)
-
-    loss += lambda_regularization * l1
-    return loss
-
-def one_hot_encode(tensor):
-    # Find the index of the maximum value
-    max_index = tensor.argmax()
-    # Create a new tensor with zeros and a 1 at the max_index
-    one_hot = torch.zeros_like(tensor)
-    one_hot[max_index] = 1
-
-    return one_hot
-
-def decode_predictions(pred_heads_log_prob):
-    prob_heads = [torch.exp(x) for x in pred_heads_log_prob]  # convert to standard probabilities
-    pred_heads_list = []
-    for j in range(len(prob_heads)):
-        pred_head = torch.zeros((len(prob_heads[j]), 3))
-        for i in range(len(prob_heads[j])):
-            pred_head[i] = one_hot_encode(prob_heads[j][i])
-        pred_heads_list.append(pred_head)
-
-    return pred_heads_list
-        
-def compute_losses(model, images, labels, config, criterion, device):
-    x1, x2, x3, x4 = model(images) # x1, x2, x3, x4 are outputs of last linear layer - raw data
-    raw_predictions = [x1, x2, x3, x4] # raw_predictions are outputs of last linear layer, before LogSoftMax
-
-    pred_heads_log_prob = [nn.LogSoftmax(dim=1)(x) for x in raw_predictions] # pred_heads_log_prob are the log probabilities
-    pred_heads = decode_predictions(pred_heads_log_prob) # pred_heads is now a list of 4 tensors of shape (batch_size x 3) and contains [0,1,0] for example
-    pred_heads = [x.to(device) for x in pred_heads]
-
-    # Compute the loss for each head and update the head parameters:
-    if config["cnn"]["training"]["loss_function"] != "1":
-        losses = [criterion(x, labels[:,i*3:(i+1)*3]) for i, x in enumerate([x1, x2, x3, x4])]
-    else:
-        losses = [criterion(x, labels[:,i*3:(i+1)*3].argmax(1)) for i, x in enumerate([x1, x2, x3, x4])]
-    total_loss = sum(losses)
-
-    return total_loss, losses, pred_heads
-
-def show_distribution(train_subset, val_subset, test_subset):
-    target_dict = defaultdict(int) 
-    for _, label in train_subset:
-        label_indices = tuple(label.tolist())  # Convert one-hot encoded labels to class indices and create a tuple
-        target_dict[label_indices] += 1
-    
-    target_dict = {key: target_dict[key] for key in sorted(target_dict)}
-    total = sum(target_dict.values())
-    target_dict = {key: value/total for key, value in target_dict.items()}
-    plt.figure()
-    keys_str = [str(key) for key in target_dict.keys()]
-    plt.bar(keys_str, target_dict.values(), color='skyblue')
-    plt.xticks(range(len(keys_str)), range(1, len(keys_str) + 1))
-    plt.title("Distribution of classes in the TRAINING subset")
-
-    target_dict = defaultdict(int) 
-    for _, label in val_subset:
-        label_indices = tuple(label.tolist())  # Convert one-hot encoded labels to class indices and create a tuple
-        target_dict[label_indices] += 1
-    
-    target_dict = {key: target_dict[key] for key in sorted(target_dict)}
-    total = sum(target_dict.values())
-    target_dict = {key: value/total for key, value in target_dict.items()}
-    plt.figure()
-    keys_str = [str(key) for key in target_dict.keys()]
-    plt.bar(keys_str, target_dict.values(), color='skyblue')
-    plt.xticks(range(len(keys_str)), range(1, len(keys_str) + 1))
-    plt.title("Distribution of classes in the VALIDATION subset")
-
-    target_dict = defaultdict(int)
-    for _, label in test_subset:
-        label_indices = tuple(label.tolist())
-        target_dict[label_indices] += 1
-
-    target_dict = {key: target_dict[key] for key in sorted(target_dict)}
-    total = sum(target_dict.values())
-    target_dict = {key: value/total for key, value in target_dict.items()}
-    plt.figure()
-    keys_str = [str(key) for key in target_dict.keys()]
-    plt.bar(keys_str, target_dict.values(), color='skyblue')
-    plt.xticks(range(len(keys_str)), range(1, len(keys_str) + 1))
-    plt.title("Distribution of classes in the TEST subset")
-    plt.show()
 
 def train():
     # Train the model
@@ -315,7 +28,6 @@ def train():
     best_acc = -1 # yea minus one
     start_time = time.time()
     for epoch in tqdm(range(num_epochs), desc="Epochs"):
-
         model.train() # set model to train mode
 
         totalTrainLoss = 0
@@ -338,10 +50,10 @@ def train():
             # Forward pass
             if config["cnn"]["model"]["use_multihead"]:
                 # Compute the sum of losses in heads and update the backbone:
-                total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
+                total_loss, losses, pred_heads = model_utils.compute_losses(model, images, labels, config, criterion)
                 # Apply regularization
                 if config["cnn"]["model"]["regularization"]["use"]:
-                    total_loss = apply_regularization(model, total_loss, config)
+                    total_loss = model_utils.apply_regularization(model, total_loss)
                 
                 optimizer.zero_grad() # zero the gradients
                 total_loss.backward() # backpropagation through the whole network
@@ -358,7 +70,7 @@ def train():
                 pred = model(images)
                 loss = criterion(pred, labels) # calculate the loss for the current batch
                 if config["cnn"]["model"]["regularization"]["use"]: # Regularization
-                    loss = apply_regularization(model, loss, config)
+                    loss = model_utils.apply_regularization(model, loss)
 
                 # Backward and optimize
                 optimizer.zero_grad()
@@ -382,7 +94,7 @@ def train():
 
                 # Forward pass
                 if config["cnn"]["model"]["use_multihead"]:
-                    total_loss, losses, pred_heads = compute_losses(model, images, labels, config, criterion, device)
+                    total_loss, losses, pred_heads = model_utils.compute_losses(model, images, labels, config, criterion)
 
                     totalValLoss += total_loss.item()
                     for i in range(len(valCorrect_list)):
@@ -427,6 +139,7 @@ def train():
         if val_acc > best_acc:
             best_acc = valCorrect
             best_model = copy.deepcopy(model)
+            best_optimizer = copy.deepcopy(optimizer)
 
         # Logs
         loss_dict["train_loss"].append(avgHeadTrainLoss)
@@ -444,7 +157,7 @@ def train():
                     file.write(f"\t\t\tTrain accuracy: {heads_train_acc[i]:.4f}, Val accuracy: {heads_val_acc[i]:.4f}\n")
             file.write(f"\tTime elapsed: {time.time() - start_time:.2f} seconds\n")
 
-    return best_model
+    return best_model, best_optimizer
 
 # ------------------------- MAIN -------------------------------
 if __name__ == "__main__":
@@ -457,6 +170,10 @@ if __name__ == "__main__":
         torch.cuda.empty_cache()
 
     print("Used device is: ", device)
+
+    vis_utils = Visualization(config=config)
+    prepro_utils = PreprocessingUtils(config=config)
+    model_utils = ModelUtils(config=config, device=device)
 
     # define the active user and his data path
     user = config["active_user"]
@@ -486,8 +203,7 @@ if __name__ == "__main__":
             width=config["preprocessor"]["resize"]["width"],
             height=config["preprocessor"]["resize"]["height"]
         ),
-        transforms.ToTensor(),
-        transforms.Resize((config["preprocessor"]["resize"]["width"], config["preprocessor"]["resize"]["height"]))
+        transforms.ToTensor()
     ])
     print("Loading dataset...")
     dataset = CustomDataset(data_path, transform=transform)
@@ -538,17 +254,18 @@ if __name__ == "__main__":
 
     if config["general"]["show_distribution"]:
         # Show the distribution of the classes in the subsets
-        show_distribution(train_subset, val_subset, test_subset)
+        vis_utils.show_distribution(train_subset, val_subset, test_subset)
 
     # Normalize the data
     if config["cnn"]["training"]["normalization"]["use"]:
         print("Normalization started...")
-        train_subset, val_subset, test_subset = normalize_data(train_subset, batch_size, shuffle, dataset, num_workers, config)
+        subsets = [train_subset, val_subset, test_subset]
+        train_subset, val_subset, test_subset = prepro_utils.normalize_data(subsets, batch_size, shuffle, dataset, num_workers)
 
     # Create weighted random sampler
     if config["cnn"]["training"]["use_weighted_rnd_sampler"]:
         print("Creating weighted random sampler...")
-        sampler, shuffle = create_weighted_sampler(train_subset, num_classes)
+        sampler, shuffle = prepro_utils.create_weighted_sampler(train_subset, num_classes)
     else:
         sampler = None
         shuffle = config["cnn"]["training"]["shuffle"]
@@ -562,45 +279,11 @@ if __name__ == "__main__":
     # Show histogram of the labels:
     if config["general"]["log_histograms"]:
         print("Creating histograms...")
-        show_histogram([train_loader, val_loader, test_loader], config)
+        vis_utils.show_histogram([train_loader, val_loader, test_loader])
 
     # Choose and Initialize a model
     print("Initializing model...")
-    if config["cnn"]["model"]["type"]["cnn2"]:
-        model = CNN2(config=config).to(device)
-
-    elif config["cnn"]["model"]["type"]["cnn4"]:
-        model = CNN4(config=config).to(device)
-
-    elif config["cnn"]["model"]["type"]["resnet18"]:
-        model = models.resnet18(weights=None, num_classes=num_classes).to(device)
-
-    elif config["cnn"]["model"]["type"]["resnet34"]:
-        model = models.resnet34(weights=None, num_classes=num_classes).to(device) 
-    
-    elif config["cnn"]["model"]["type"]["resnet50"]:
-        model = models.resnet50(weights=None, num_classes=num_classes).to(device)
-    
-    else:
-        raise ValueError("Model type not supported!")
-
-    if config["cnn"]["model"]["use_multihead"]:
-        shared_backbone = model
-        # feature extraction - getting the output layer after convolution layers:
-        if config["cnn"]["model"]["type"]["resnet18"] or config["cnn"]["model"]["type"]["resnet34"] or config["cnn"]["model"]["type"]["resnet50"]:
-            return_nodes = {
-                "avgpool": "AdaptiveAvgPool2d(output_size=(1, 1))"
-            }
-        elif config["cnn"]["model"]["type"]["cnn2"]:
-            return_nodes = {
-                "dropout2": "DropoutLayer2"
-            }
-        elif config["cnn"]["model"]["type"]["cnn4"]:
-            return_nodes = {
-                "dropout2": "DropoutLayer2"
-            }
-        backbone_last_layer = create_feature_extractor(shared_backbone, return_nodes=return_nodes) # the backbone_last_layer is the output of the last convolutional layer which we feed into each head
-        model = MultiHeadNetwork(config, backbone_last_layer).to(device)
+    model = model_utils.init_model(num_classes)
 
     # Define loss function and optimizer
     loss_functions = {
@@ -626,11 +309,11 @@ if __name__ == "__main__":
 
     # Train the model
     print("Training started!")
-    best_model = train()
+    best_model, best_optimizer = train()
     # save the model
     if config["general"]["save_model"]:
         ("saving the model...")
-        torch.save(best_model, os.path.join(model_folder_training, "model.pth"))
+        model_utils.save_model(best_model, best_optimizer, os.path.join(model_folder_training, "model.pth"))
 
     # Test the model
     print("Testing started...")
@@ -659,6 +342,6 @@ if __name__ == "__main__":
 
     # plot the training loss and accuracy
     print("Plotting learning curve")
-    plot_learning_curve(loss_dict, plot_folder_training)
+    vis_utils.plot_learning_curve(loss_dict, plot_folder_training)
 
     print("All done!")
