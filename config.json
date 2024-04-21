@@ -1,5 +1,5 @@
 {
-    "active_user": "jan",
+    "active_user": "remote_pc",
     "general": {
         "use_stratify": false,
         "show_distribution": false,
@@ -7,6 +7,7 @@
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
         "model_path": "./logs/models/",
+        "model_path_to_load": "./logs/models/2024-04-21_12-58-04/model.pth",
         "sample_img_path": "./logs/sample_images/",
         "classified_images_path":{
             "correct": "./logs/classified_images/correct",
@@ -36,7 +37,7 @@
         "crop_size": 300,
         "setting": {
             "crop": true,
-            "resize": false,
+            "resize": true,
             "rgb2gray": false,
             "rgb2lab": false,
             "clahe": false,
@@ -73,7 +74,8 @@
         "model": {
             "use_multihead": true,
             "type": {
-                "simple_cnn": true,
+                "cnn2": true,
+                "cnn4": false,
                 "resnet18": false,
                 "resnet34": false,
                 "resnet50": false
@@ -91,8 +93,8 @@
         "training": {
             "batch_size": 32,
             "compute_new_mean_std": false,
-            "num_epochs": 20,
-            "num_samples_subset": 200000,
+            "num_epochs": 1,
+            "num_samples_subset": 200,
             "num_workers": 4,
             "learning_rate": 0.001,
             "loss_function": "1",
@@ -106,9 +108,11 @@
             "normalization": {
                 "use": false,
                 "compute_new_mean_std": false,
-                "log_path": "./logs/normalization"
+                "log_path": "./logs/normalization",
+                "use_batch_normalization": false
             },
-            "use_weighted_rnd_sampler": false
+            "use_weighted_rnd_sampler": false,
+            "continue_training": true
         },
         "visualization": {
             "graphviz_path": "./packages/Graphviz/bin/"
