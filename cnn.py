@@ -1,6 +1,4 @@
 import torch.nn as nn
-from torch import flatten
-
 
 class CNN2(nn.Module):
     def __init__(self, config):
@@ -40,6 +38,8 @@ class CNN2(nn.Module):
                 width = (width - layer.kernel_size[0] + 2*layer.padding[0]) // layer.stride[0] + 1
                 height = (height - layer.kernel_size[1] + 2*layer.padding[1]) // layer.stride[1] + 1
 
+        self.flatten = nn.Flatten(start_dim=1)
+
         self.fc1 = nn.Linear(in_features=32*width*height, out_features=256)
         self.relu3 = nn.ReLU()
         self.dropout1 = nn.Dropout(p=droupout_rate)
@@ -65,8 +65,8 @@ class CNN2(nn.Module):
         x = self.relu2(x)
         x = self.pool2(x)
         
-        x = flatten(x, 1)
-        
+        x = self.flatten(x)
+
         x = self.fc1(x)
         x = self.relu3(x)
         x = self.dropout1(x)
@@ -127,6 +127,8 @@ class CNN4(nn.Module):
                 width = (width - layer.kernel_size[0] + 2*layer.padding[0]) // layer.stride[0] + 1
                 height = (height - layer.kernel_size[1] + 2*layer.padding[1]) // layer.stride[1] + 1
 
+        self.flatten = nn.Flatten(start_dim=1)
+
         self.fc1 = nn.Linear(in_features=128*width*height, out_features=256)
         self.relu3 = nn.ReLU()
         self.dropout1 = nn.Dropout(p=droupout_rate)
@@ -163,8 +165,8 @@ class CNN4(nn.Module):
             x = self.bn4(x)
         x = self.relu4(x)
         x = self.pool4(x)
-        
-        x = flatten(x, 1)
+
+        x = self.flatten(x)
         
         x = self.fc1(x)
         x = self.relu3(x)

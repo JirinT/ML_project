@@ -18,19 +18,19 @@ class MultiHeadNetwork(nn.Module):
         elif config["cnn"]["model"]["type"]["resnet50"]:
             input_size = 2048
         elif config["cnn"]["model"]["type"]["cnn2"]:
-            input_size = 256
+            input_size = 100352
         elif config["cnn"]["model"]["type"]["cnn4"]:
-            input_size = 256
+            input_size = 25088
         else:
             raise ValueError("Unknown model type")
         self.heads = nn.ModuleList([self.output_head_nn(input_size=input_size, output_size=config["cnn"]["model"]["num_classes"]) for _ in range(self.num_heads)])
 
     def output_head_nn(self, input_size, output_size):
         head = nn.Sequential(
-            nn.Linear(input_size, input_size//2),
+            nn.Linear(input_size, 256),
             nn.Dropout(self.config["cnn"]["model"]["dropout_rate"]),
             nn.ReLU(),
-            nn.Linear(input_size//2, output_size), # output_size must be set to 3 in config if we use this model for classification
+            nn.Linear(256, output_size), # output_size must be set to 3 in config if we use this model for classification
         )
         return head
     
@@ -41,7 +41,8 @@ class MultiHeadNetwork(nn.Module):
         if self.config["cnn"]["model"]["type"]["resnet18"] or self.config["cnn"]["model"]["type"]["resnet34"] or self.config["cnn"]["model"]["type"]["resnet50"]:
             x = x['AdaptiveAvgPool2d(output_size=(1, 1))'] # shape = (batch_size, 512, 1, 1)
         elif self.config["cnn"]["model"]["type"]["cnn2"] or self.config["cnn"]["model"]["type"]["cnn4"]:
-            x = x['PoolLayer2']
+            x = x['Flatten(start_dim=1, end_dim=-1)']
+
         x = x.squeeze() # shape = (batch_size, 512)
 
         # pass through each head:

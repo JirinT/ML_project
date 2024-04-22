@@ -318,7 +318,7 @@ if __name__ == "__main__":
     best_model, best_optimizer = train()
     # save the model
     if config["general"]["save_model"]:
-        ("saving the model...")
+        print("saving the model...")
         model_utils.save_model(best_model, best_optimizer, os.path.join(model_folder_training, "model.pth"))
 
     # Test the model
