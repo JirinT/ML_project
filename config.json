@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "remote_pc",
     "general": {
         "use_stratify": false,
         "show_distribution": false,
@@ -74,8 +74,8 @@
         "model": {
             "use_multihead": true,
             "type": {
-                "cnn2": false,
-                "cnn4": true,
+                "cnn2": true,
+                "cnn4": false,
                 "resnet18": false,
                 "resnet34": false,
                 "resnet50": false
@@ -93,8 +93,8 @@
         "training": {
             "batch_size": 32,
             "compute_new_mean_std": false,
-            "num_epochs": 1,
-            "num_samples_subset": 20,
+            "num_epochs": 20,
+            "num_samples_subset": 200000,
             "num_workers": 4,
             "learning_rate": 0.001,
             "loss_function": "1",

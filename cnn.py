@@ -15,7 +15,7 @@ class CNN2(nn.Module):
         output_size = config["cnn"]["model"]["num_classes"]
         droupout_rate = config["cnn"]["model"]["dropout_rate"]
 
-        self.conv1 = nn.Conv2d(in_channels=num_channels, out_channels=16, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(in_channels=num_channels, out_channels=16, kernel_size=5, stride=1, padding=2)
         if config["cnn"]["training"]["normalization"]["use_batch_normalization"]:
             self.bn1 = nn.BatchNorm2d(16)
         self.bn1 = nn.BatchNorm2d(16)
@@ -92,7 +92,7 @@ class CNN4(nn.Module):
         output_size = config["cnn"]["model"]["num_classes"]
         droupout_rate = config["cnn"]["model"]["dropout_rate"]
 
-        self.conv1 = nn.Conv2d(in_channels=num_channels, out_channels=16, kernel_size=3, stride=1, padding=1)
+        self.conv1 = nn.Conv2d(in_channels=num_channels, out_channels=16, kernel_size=5, stride=1, padding=2)
         if config["cnn"]["training"]["normalization"]["use_batch_normalization"]:
             self.bn1 = nn.BatchNorm2d(16)
         self.bn1 = nn.BatchNorm2d(16)
