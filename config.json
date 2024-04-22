@@ -112,7 +112,7 @@
                 "use_batch_normalization": false
             },
             "use_weighted_rnd_sampler": false,
-            "continue_training": true
+            "continue_training": false
         },
         "visualization": {
             "graphviz_path": "./packages/Graphviz/bin/"

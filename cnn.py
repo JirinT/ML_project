@@ -40,11 +40,10 @@ class CNN2(nn.Module):
                 width = (width - layer.kernel_size[0] + 2*layer.padding[0]) // layer.stride[0] + 1
                 height = (height - layer.kernel_size[1] + 2*layer.padding[1]) // layer.stride[1] + 1
 
-        self.dropout1 = nn.Dropout(p=droupout_rate)
         self.fc1 = nn.Linear(in_features=32*width*height, out_features=256)
         self.relu3 = nn.ReLU()
+        self.dropout1 = nn.Dropout(p=droupout_rate)
 
-        self.dropout2 = nn.Dropout(p=droupout_rate)
         self.fc2 = nn.Linear(256, output_size)
         self.logSoftmax = nn.LogSoftmax(dim=1)
 
@@ -68,11 +67,10 @@ class CNN2(nn.Module):
         
         x = flatten(x, 1)
         
-        x = self.dropout1(x)
         x = self.fc1(x)
         x = self.relu3(x)
+        x = self.dropout1(x)
 
-        x = self.dropout2(x)
         x = self.fc2(x)
         output = self.logSoftmax(x)
         
@@ -129,11 +127,10 @@ class CNN4(nn.Module):
                 width = (width - layer.kernel_size[0] + 2*layer.padding[0]) // layer.stride[0] + 1
                 height = (height - layer.kernel_size[1] + 2*layer.padding[1]) // layer.stride[1] + 1
 
-        self.dropout1 = nn.Dropout(p=droupout_rate)
         self.fc1 = nn.Linear(in_features=128*width*height, out_features=256)
         self.relu3 = nn.ReLU()
+        self.dropout1 = nn.Dropout(p=droupout_rate)
 
-        self.dropout2 = nn.Dropout(p=droupout_rate)
         self.fc2 = nn.Linear(256, output_size)
         self.logSoftmax = nn.LogSoftmax(dim=1)
 
@@ -169,11 +166,10 @@ class CNN4(nn.Module):
         
         x = flatten(x, 1)
         
-        x = self.dropout1(x)
         x = self.fc1(x)
         x = self.relu3(x)
+        x = self.dropout1(x)
         
-        x = self.dropout2(x)
         x = self.fc2(x)
         output = self.logSoftmax(x)
         

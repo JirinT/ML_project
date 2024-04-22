@@ -41,7 +41,7 @@ class MultiHeadNetwork(nn.Module):
         if self.config["cnn"]["model"]["type"]["resnet18"] or self.config["cnn"]["model"]["type"]["resnet34"] or self.config["cnn"]["model"]["type"]["resnet50"]:
             x = x['AdaptiveAvgPool2d(output_size=(1, 1))'] # shape = (batch_size, 512, 1, 1)
         elif self.config["cnn"]["model"]["type"]["cnn2"] or self.config["cnn"]["model"]["type"]["cnn4"]:
-            x = x['DropoutLayer2']
+            x = x['PoolLayer2']
         x = x.squeeze() # shape = (batch_size, 512)
 
         # pass through each head:

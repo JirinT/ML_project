@@ -325,11 +325,11 @@ class ModelUtils():
                 }
             elif self.config["cnn"]["model"]["type"]["cnn2"]:
                 return_nodes = {
-                    "dropout2": "DropoutLayer2"
+                    "pool2": "PoolLayer2"
                 }
             elif self.config["cnn"]["model"]["type"]["cnn4"]:
                 return_nodes = {
-                    "dropout2": "DropoutLayer2"
+                    "pool2": "PoolLayer2"
                 }
             backbone_last_layer = create_feature_extractor(shared_backbone, return_nodes=return_nodes) # the backbone_last_layer is the output of the last convolutional layer which we feed into each head
             model = MultiHeadNetwork(self.config, backbone_last_layer).to(self.device)
