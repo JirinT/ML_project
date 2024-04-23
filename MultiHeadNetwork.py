@@ -13,6 +13,7 @@ class MultiHeadNetwork(nn.Module):
         self.num_heads = config["cnn"]["model"]["num_heads"]
         # define head layers:
         # the input_size is the output of last conv resnet layer, for resnet18 and resnet34 it is 512, for resnet 50 its 2048
+        # make this dynamic instead of hard coded
         if config["cnn"]["model"]["type"]["resnet18"] or config["cnn"]["model"]["type"]["resnet34"]:
             input_size = 512
         elif config["cnn"]["model"]["type"]["resnet50"]:
@@ -26,11 +27,12 @@ class MultiHeadNetwork(nn.Module):
         self.heads = nn.ModuleList([self.output_head_nn(input_size=input_size, output_size=config["cnn"]["model"]["num_classes"]) for _ in range(self.num_heads)])
 
     def output_head_nn(self, input_size, output_size):
+        hidden_size = 1024 if input_size == 2048 else 256
         head = nn.Sequential(
-            nn.Linear(input_size, 256),
+            nn.Linear(input_size, hidden_size),
             nn.Dropout(self.config["cnn"]["model"]["dropout_rate"]),
             nn.ReLU(),
-            nn.Linear(256, output_size), # output_size must be set to 3 in config if we use this model for classification
+            nn.Linear(hidden_size, output_size), # output_size must be set to 3 in config if we use this model for classification
         )
         return head
     
