@@ -111,41 +111,46 @@ def train():
                     valCorrect += (pred.argmax(1) == labels.argmax(1)).type(
                     torch.float).sum().item()
 
-        avgTrainLoss = totalTrainLoss / total_step_train
-        avgValLoss = totalValLoss / total_step_val
         avgValLoss_heads = [total / total_step_val for total in totalValLoss_heads] # average val loss for each head
         avgTrainLoss_heads = [total / total_step_train for total in totalTrainLoss_heads] # average train loss for each head
         avgHeadValLoss = sum(avgValLoss_heads) / len(avgValLoss_heads) # average val loss for all heads
         avgHeadTrainLoss = sum(avgTrainLoss_heads) / len(avgTrainLoss_heads) # average train loss for all heads
 
         if config["cnn"]["model"]["use_multihead"]:
-            # train accuracies:
-            train_acc = trainCorrect_total / total_step_train # train_acc is the overall accuracy predicting all 4 heads
             # train accuracies for each head:
             for i in range(len(trainCorrect_list)):
                 heads_train_acc[i] = trainCorrect_list[i] / total_step_train
-            avgHeadTrainAcc = sum(heads_train_acc) / len(heads_train_acc)
-            # val accuracies:
-            val_acc = valCorrect_total / total_step_val # val_acc is the overall accuracy predicting all 4 heads
+            avgHeadTrainAcc = sum(heads_train_acc) / len(heads_train_acc) # average train accuracy for all heads
             # val accuracies for each head:
             for i in range(len(valCorrect_list)):
                 heads_val_acc[i] = valCorrect_list[i] / total_step_val
             avgHeadValAcc = sum(heads_val_acc) / len(heads_val_acc) # average val accuracy for all heads
 
+            if avgHeadValAcc > best_acc:
+                best_acc = avgHeadValAcc
+                best_model = copy.deepcopy(model)
+                best_optimizer = copy.deepcopy(optimizer)
         else:
             train_acc = trainCorrect / total_step_train
             val_acc = valCorrect / total_step_val
 
-        if val_acc > best_acc:
-            best_acc = valCorrect
-            best_model = copy.deepcopy(model)
-            best_optimizer = copy.deepcopy(optimizer)
+            if val_acc > best_acc:
+                best_acc = val_acc
+                best_model = copy.deepcopy(model)
+                best_optimizer = copy.deepcopy(optimizer)
 
         # Logs
-        loss_dict["train_loss"].append(avgHeadTrainLoss)
-        loss_dict["train_acc"].append(avgHeadTrainAcc)
-        loss_dict["val_loss"].append(avgHeadValLoss)
-        loss_dict["val_acc"].append(avgHeadValAcc)
+        if config["cnn"]["model"]["use_multihead"]:
+            loss_dict["train_loss"].append(avgHeadTrainLoss)
+            loss_dict["train_acc"].append(avgHeadTrainAcc)
+            loss_dict["val_loss"].append(avgHeadValLoss)
+            loss_dict["val_acc"].append(avgHeadValAcc)
+        else:
+            loss_dict["train_loss"].append(totalTrainLoss / total_step_train)
+            loss_dict["train_acc"].append(train_acc)
+            loss_dict["val_loss"].append(totalValLoss / total_step_val)
+            loss_dict["val_acc"].append(val_acc)
+    
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"Epoch: {epoch+1}/{num_epochs}\n")
             file.write(f"\tTrain loss: {loss_dict['train_loss'][-1]:.4f}, Val loss: {loss_dict['val_loss'][-1]:.4f}\n")
