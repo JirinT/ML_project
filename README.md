@@ -25,7 +25,7 @@ Dataset link: https://www.repository.cam.ac.uk/items/6d77cd6d-8569-4bf4-9d5f-311
    .venv\Scripts\activate
    ```
    ```
-   python3 -m pip install -r requirements.txt
+   python -m pip install -r requirements.txt
    ```
 3. Open <em>file_downloader.py</em>
 4. Change <em>download_dir</em> to own preference and execute <em>file_downloader.py</em>
