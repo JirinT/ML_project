@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "jan",
     "general": {
         "use_stratify": false,
         "show_distribution": false,
@@ -50,7 +50,7 @@
             "distance_metric": "euclidean"
         },
         "training": {
-            "num_samples_subset": 1000,
+            "num_samples_subset": 100,
             "start_idx": null,
             "end_idx": null,
             "test_size": 0.1,
@@ -67,7 +67,7 @@
             "cv_fold": 1,
             "use_pca": false,
             "pca_components": 0.95,
-            "knn_all_in_one": true
+            "knn_all_in_one": false
         }
     },
     "cnn": {

@@ -45,15 +45,15 @@ def decode_labels(labels):
 def apply_cross_validation(trainX, trainY, config):
 
 	print("Cross validation started.")
-	k_range = range(1,config["training"]["num_k"])
+	k_range = range(1,config["knn"]["training"]["num_k"])
 	k_accuracy = []
 
 	with open(os.path.join(log_folder_training, "log.txt"), "w") as file:
 		for k in k_range:
 			print(f"Now running for k = {k}")
-			knn = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
+			knn = KNeighborsClassifier(n_neighbors=k, metric=config["knn"]["classifier"]["distance_metric"])
 
-			accuracies = cross_val_score(knn, X=trainX, y=trainY, cv=config["training"]["cv_fold"])
+			accuracies = cross_val_score(knn, X=trainX, y=trainY, cv=config["knn"]["training"]["cv_fold"])
 			file.write(f"K-value {k}: Accuracy = {np.mean(accuracies)}\n")
 			k_accuracy.append(np.mean(accuracies))
 	print("End of cross validation.")
@@ -99,7 +99,7 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 	print(f"Starting grid search for label: {label} ...")
 
 	param_grid = {
-		'n_neighbors': range(1, config["training"]["num_k"]+1),
+		'n_neighbors': range(1, config["knn"]["training"]["num_k"]+1),
 		'metric': ['euclidean', 'manhattan', 'chebyshev'],
 		"weights": ["uniform", "distance"]
 	}
@@ -115,7 +115,7 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 	best_accuracy = max(result['accuracy'] for result in results)
 	best_f1_score = max(result['f1_score_avg'] for result in results)
 
-	if config["training"]["optimizer_metric"]["accuracy"]:
+	if config["knn"]["training"]["optimizer_metric"]["accuracy"]:
 		best_params = [result for result in results if result['accuracy'] == best_accuracy][0]
 	else:
 		best_params = [result for result in results if result['f1_score_avg'] == best_f1_score][0]
@@ -135,7 +135,7 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 
 def apply_PCA(trainX, valX, testX, config):
 
-	pca = PCA(n_components=config["training"]["pca_components"])
+	pca = PCA(n_components=config["knn"]["training"]["pca_components"])
 	trainX = pca.fit_transform(trainX)
 	valX = pca.transform(valX)
 	testX = pca.transform(testX)
@@ -294,9 +294,9 @@ dataloader = SimpleDataLoader(data_path, preprocessors=simple_preprocessor)
 
 # Load the data
 data, labels = dataloader.load_data(
-	num_samples_subset=config["training"]["num_samples_subset"], 
-	start_idx=config["training"]["start_idx"], 
-	end_idx=config["training"]["end_idx"]
+	num_samples_subset=config["knn"]["training"]["num_samples_subset"], 
+	start_idx=config["knn"]["training"]["start_idx"], 
+	end_idx=config["knn"]["training"]["end_idx"]
 	)
 if config["general"]["log_histograms"] and user == "remote_pc":
 	histograms(labels, config) # create histograms for the labels
@@ -318,39 +318,39 @@ if show_images and user == "remote_pc":
 (trainX, testX, trainY, testY) = train_test_split(
 	imgs_flat, 
 	labels_flat, 
-	test_size=config["training"]["test_size"], 
-	random_state=config["training"]["random_state"]
+	test_size=config["knn"]["training"]["test_size"], 
+	random_state=config["knn"]["training"]["random_state"]
 	)
 
 # Split the training set into training and validation sets
 (trainX, valX, trainY, valY) = train_test_split(
 	trainX, 
 	trainY, 
-	test_size=config["training"]["val_size"], 
-	random_state=config["training"]["random_state"]
+	test_size=config["knn"]["training"]["val_size"], 
+	random_state=config["knn"]["training"]["random_state"]
 	)
 
 # Apply normalization
-if config["training"]["use_normalization"]:
+if config["knn"]["training"]["use_normalization"]:
 	print("Applying MinMaxScaler...")
 	scaler = MinMaxScaler()
 	trainX = scaler.fit_transform(trainX)
 	testX = scaler.transform(testX)
 
 # Apply PCA
-if config["training"]["use_pca"]:
+if config["knn"]["training"]["use_pca"]:
 	print("Applying PCA...")
 	trainX, valX, testX = apply_PCA(trainX, valX, testX, config)
 
 # Find best setting for KNN using cross-validation or grid search
-if config["training"]["use_cross_validation"]:
+if config["knn"]["training"]["use_cross_validation"]:
 	best_k = apply_cross_validation(trainX, trainY, config)
-	knn = KNeighborsClassifier(n_neighbors=best_k, metric=config["classifier"]["distance_metric"])
+	knn = KNeighborsClassifier(n_neighbors=best_k, metric=config["knn"]["classifier"]["distance_metric"])
 	knn.fit(trainX, trainY)
-elif config["training"]["use_grid_search"]:
+elif config["knn"]["training"]["use_grid_search"]:
 	start_time = time.time()
 
-	if config["training"]["knn_all_in_one"]:
+	if config["knn"]["training"]["knn_all_in_one"]:
 		best_params_all = apply_own_grid_search(trainX, trainY, valX, valY, config, label="all")
 		knn_all = KNeighborsClassifier(n_neighbors=best_params_all["k"], metric=best_params_all["metric"], weights=best_params_all["weight"])
 		knn_all.fit(trainX, trainY)
@@ -373,11 +373,22 @@ elif config["training"]["use_grid_search"]:
 	with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
 		file.write("\nGrid search took {:.2f} seconds.\n".format(time.time() - start_time))
 else:
-	k = config["classifier"]["k_value"]
-	knn_all = KNeighborsClassifier(n_neighbors=k, metric=config["classifier"]["distance_metric"])
-	knn_all.fit(trainX, trainY)
+	k = config["knn"]["classifier"]["k_value"]
+	if config["knn"]["training"]["knn_all_in_one"]:
+		knn_all = KNeighborsClassifier(n_neighbors=k, metric=config["knn"]["classifier"]["distance_metric"])
+		knn_all.fit(trainX, trainY)
+	else:
+		knn_flow_rate = KNeighborsClassifier(n_neighbors=k, metric=config["knn"]["classifier"]["distance_metric"])
+		knn_lateral_speed = KNeighborsClassifier(n_neighbors=k, metric=config["knn"]["classifier"]["distance_metric"])
+		knn_z_offset = KNeighborsClassifier(n_neighbors=k, metric=config["knn"]["classifier"]["distance_metric"])
+		knn_hotend_temperature = KNeighborsClassifier(n_neighbors=k, metric=config["knn"]["classifier"]["distance_metric"])
 
-if config["training"]["knn_all_in_one"]:
+		knn_flow_rate.fit(trainX, trainY[:, 0:3])
+		knn_lateral_speed.fit(trainX, trainY[:, 3:6])
+		knn_z_offset.fit(trainX, trainY[:, 6:9])
+		knn_hotend_temperature.fit(trainX, trainY[:, 9:])
+
+if config["knn"]["training"]["knn_all_in_one"]:
 	y_predicted = knn_all.predict(testX)
 	test_accuracy_all = knn_all.score(testX, testY)
 	f1_score_all = f1_score(testY, y_predicted, average=None)
@@ -417,7 +428,7 @@ else:
 		file.write("\tZ Offset: {:.2f}%\n".format(f1_score_z_offset * 100))
 		file.write("\tHotend Temperature: {:.2f}%\n".format(f1_score_hotend_temperature * 100))
 
-if not config["training"]["knn_all_in_one"]:
+if not config["knn"]["training"]["knn_all_in_one"]:
 	y_predicted = np.hstack((y_predicted_flow_rate, y_predicted_lateral_speed, y_predicted_z_offset, y_predicted_hotend_temperature))
 
 if config["general"]["log_classified_images"] and user == "remote_pc":
