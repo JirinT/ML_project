@@ -26,6 +26,8 @@ def train():
     total_step_train = len(train_loader.dataset)
     total_step_val = len(val_loader.dataset)
     best_acc = -1 # yea minus one
+    patience = 3 # early stopping - if the validation loss does not decrease for {patience} epochs, stop training
+    best_val_loss = float("inf") # set the best validation loss to infinity
     start_time = time.time()
     for epoch in tqdm(range(num_epochs), desc="Epochs"):
         model.train() # set model to train mode
@@ -161,6 +163,16 @@ def train():
                     file.write(f"\t\t\tTrain loss: {avgTrainLoss_heads[i]:.4f}, Val loss: {avgValLoss_heads[i]:.4f}\n")
                     file.write(f"\t\t\tTrain accuracy: {heads_train_acc[i]:.4f}, Val accuracy: {heads_val_acc[i]:.4f}\n")
             file.write(f"\tTime elapsed: {time.time() - start_time:.2f} seconds\n")
+
+        if config["cnn"]["training"]["early_stopping"]:
+            if avgHeadValLoss < best_val_loss:
+                best_val_loss = avgHeadValLoss
+                patience_counter = 0
+            else:
+                patience_counter += 1
+                if patience_counter >= patience:
+                    print("Early stopping...")
+                    break
 
     return best_model, best_optimizer
 
