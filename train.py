@@ -327,7 +327,7 @@ if __name__ == "__main__":
         test_accuracy, heads_test_acc, test_f1_score = test_model(best_model, test_loader, device, config)
         with open(os.path.join(log_folder_training, "log.txt"), "a") as file:
             file.write(f"\tTest accuracy: {test_accuracy * 100:.2f}%\n")
-            file.write(f"\tTest F1 score: {test_f1_score:.2f}\n")
+            file.write(f"\tTest F1 score: {test_f1_score * 100:.2f}\n")
             for i in range(len(heads_test_acc)):
                 file.write(f"\t\tTest accuracy head {i+1}: {heads_test_acc[i] * 100:.2f}%\n")
         print(f"Test accuracy: {test_accuracy * 100:.2f}%")
