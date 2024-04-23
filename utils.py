@@ -262,7 +262,7 @@ class PreprocessingUtils():
             weights.append(1.0 / label_counts[label])
 
         # Create a WeightedRandomSampler with the calculated weights
-        sampler = WeightedRandomSampler(weights, len(weights), replacement=False)
+        sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
         shuffle = False
 
         return sampler, shuffle
@@ -290,6 +290,30 @@ class PreprocessingUtils():
         hotend_temperature_decoded = hotend_temperature_decoded[1:]
 
         return [flow_rate_decoded, lateral_speed_decoded, z_offset_decoded, hotend_temperature_decoded]
+    
+    def compute_class_weights(config, data_loader):
+        if config["cnn"]["model"]["use_multihead"]:
+            counts_flow_rate = torch.zeros(3)
+            counts_lateral_speed = torch.zeros(3)
+            counts_z_offset = torch.zeros(3)
+            counts_hotend_temperature = torch.zeros(3)
+
+            for _, labels in data_loader:
+                flow_rate_labels = labels[:, 0:3]
+                lateral_speed_labels = labels[:, 3:6]
+                z_offset_labels = labels[:, 6:9]
+                hotend_temperature_labels = labels[:, 9:]
+                counts_flow_rate += flow_rate_labels.sum(axis=0)
+                counts_lateral_speed += lateral_speed_labels.sum(axis=0)
+                counts_z_offset += z_offset_labels.sum(axis=0)
+                counts_hotend_temperature += hotend_temperature_labels.sum(axis=0)
+        else:
+            return None
+        # compute weights:
+        N = len(data_loader.dataset)
+        num_classes = config["cnn"]["model"]["num_classes"]
+        class_weights = [N / counts_flow_rate*num_classes, N / counts_lateral_speed*num_classes, N / counts_z_offset*num_classes, N / counts_hotend_temperature*num_classes]
+        return class_weights
 
 class ModelUtils():
     def __init__(self, config, device):
@@ -400,9 +424,9 @@ class ModelUtils():
 
         # Compute the loss for each head and update the head parameters:
         if config["cnn"]["training"]["loss_function"] != "1":
-            losses = [criterion(x, labels[:,i*3:(i+1)*3]) for i, x in enumerate([x1, x2, x3, x4])]
+            losses = [criterion[i](x, labels[:,i*3:(i+1)*3]) for i, x in enumerate([x1, x2, x3, x4])]
         else:
-            losses = [criterion(x, labels[:,i*3:(i+1)*3].argmax(1)) for i, x in enumerate([x1, x2, x3, x4])]
+            losses = [criterion[i](x, labels[:,i*3:(i+1)*3].argmax(1)) for i, x in enumerate([x1, x2, x3, x4])]
         total_loss = sum(losses)
 
         return total_loss, losses, pred_heads
