@@ -136,6 +136,7 @@ def apply_own_grid_search(trainX, trainY, valX, valY, config, label):
 def apply_PCA(trainX, valX, testX, config):
 
 	pca = PCA(n_components=config["knn"]["training"]["pca_components"])
+	print("number of components:", pca.n_components_)
 	trainX = pca.fit_transform(trainX)
 	valX = pca.transform(valX)
 	testX = pca.transform(testX)
