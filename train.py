@@ -297,7 +297,18 @@ if __name__ == "__main__":
         "2": optim.SGD(model.parameters(), lr=learning_rate)
     }
 
-    criterion = loss_functions[config["cnn"]["training"]["loss_function"]].to(device)
+    if config["cnn"]["training"]["use_weighted_loss"]:
+        print("Initializing weighted loss fcns...")
+        print("\tComputing class weights...")
+        class_weights = PreprocessingUtils.compute_class_weights(config, train_loader)
+        criterion = []
+        for i in range(len(class_weights)):
+            class_weights[i] = class_weights[i].to(device)
+            head_criterion = nn.CrossEntropyLoss(weight=class_weights[i])
+            criterion.append(head_criterion)
+    else:
+        criterion = [loss_functions[config["cnn"]["training"]["loss_function"]].to(device) for _ in range(4)]
+
     optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
 
     # Load the model and optimizer if continue_training is set to True
