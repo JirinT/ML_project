@@ -312,7 +312,7 @@ class PreprocessingUtils():
         # compute weights:
         N = len(data_loader.dataset)
         num_classes = config["cnn"]["model"]["num_classes"]
-        class_weights = [N / counts_flow_rate*num_classes, N / counts_lateral_speed*num_classes, N / counts_z_offset*num_classes, N / counts_hotend_temperature*num_classes]
+        class_weights = [0.5 * N / counts * num_classes for counts in [counts_flow_rate, counts_lateral_speed, counts_z_offset, counts_hotend_temperature]]
         return class_weights
 
 class ModelUtils():
