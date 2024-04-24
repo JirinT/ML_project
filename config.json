@@ -1,5 +1,5 @@
 {
-    "active_user": "jiri",
+    "active_user": "remote_pc",
     "general": {
         "use_stratify": false,
         "show_distribution": false,
@@ -7,7 +7,7 @@
         "plot_path": "./logs/plots/",
         "log_path": "./logs/log_files/",
         "model_path": "./logs/models/",
-        "model_path_to_load": "./logs/models/2024-04-21_12-58-04/model.pth",
+        "model_path_to_load": "./logs/models/2024-04-23_13-14-44/model.pth",
         "sample_img_path": "./logs/sample_images/",
         "classified_images_path":{
             "correct": "./logs/classified_images/correct",
@@ -22,7 +22,7 @@
             "remote_pc": "./caxton_dataset"
         },
         "log_classified_images": false,
-        "log_confusion_matrix": false,
+        "log_confusion_matrix": true,
         "log_histograms": false,
         "save_cv_plot": false,
         "save_model": true,
@@ -39,9 +39,9 @@
             "crop": true,
             "resize": true,
             "rgb2gray": false,
-            "rgb2lab": true,
-            "clahe": true,
-            "unsharp": true
+            "rgb2lab": false,
+            "clahe": false,
+            "unsharp": false
                 }
     },
     "knn": {
@@ -75,16 +75,16 @@
             "use_multihead": true,
             "type": {
                 "cnn2": false,
-                "cnn4": true,
+                "cnn4": false,
                 "resnet18": false,
                 "resnet34": false,
-                "resnet50": false
+                "resnet50": true
             },
             "num_heads": 4,
             "num_classes": 3,
             "dropout_rate": 0.5,
             "regularization":{
-                "use": false,
+                "use": true,
                 "lambda": 0.01,
                 "lasso": false,
                 "ridge": true
@@ -93,8 +93,8 @@
         "training": {
             "batch_size": 32,
             "compute_new_mean_std": false,
-            "num_epochs": 4,
-            "num_samples_subset": 50,
+            "num_epochs": 20,
+            "num_samples_subset": 400000,
             "num_workers": 4,
             "learning_rate": 0.001,
             "loss_function": "1",
@@ -113,8 +113,13 @@
             },
             "use_weighted_rnd_sampler": false,
             "use_weighted_loss": false,
-            "continue_training": false,
-            "early_stopping": true
+            "continue_training": true,
+            "early_stopping": false,
+            "lr_scheduler": {
+                "use": false,
+                "step_size": 5,
+                "gamma": 0.5
+            }
         },
         "visualization": {
             "graphviz_path": "./packages/Graphviz/bin/"

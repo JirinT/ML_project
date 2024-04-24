@@ -105,6 +105,7 @@ def train():
 
                     comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
                     valCorrect_total += torch.sum(comparison).item()
+                    scheduler.step()
 
                 else:
                     pred = model(images)
@@ -327,6 +328,10 @@ if __name__ == "__main__":
         criterion = [loss_functions[config["cnn"]["training"]["loss_function"]].to(device) for _ in range(4)]
 
     optimizer = optimizer[config["cnn"]["training"]["optimizer"]]
+    
+    # Learning rate scheduling
+    if config["cnn"]["training"]["lr_scheduler"]["use"]:
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=config["cnn"]["training"]["lr_scheduler"]["step_size"], gamma=config["cnn"]["training"]["lr_scheduler"]["gamma"])
 
     # Load the model and optimizer if continue_training is set to True
     if config["cnn"]["training"]["continue_training"]:
