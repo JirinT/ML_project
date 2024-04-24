@@ -171,7 +171,7 @@ def train():
                 patience_counter = 0
             else:
                 patience_counter += 1
-                if patience_counter >= patience:
+                if patience_counter > patience:
                     print("Early stopping...")
                     break
 
