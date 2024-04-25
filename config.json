@@ -91,10 +91,10 @@
             }
         },
         "training": {
-            "batch_size": 32,
+            "batch_size": 16,
             "compute_new_mean_std": false,
-            "num_epochs": 20,
-            "num_samples_subset": 400000,
+            "num_epochs": 1,
+            "num_samples_subset": 40,
             "num_workers": 4,
             "learning_rate": 0.001,
             "loss_function": "1",

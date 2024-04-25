@@ -106,7 +106,9 @@ def train():
 
                     comparison = torch.all(torch.cat(pred_heads, dim=1) == labels, dim=1)
                     valCorrect_total += torch.sum(comparison).item()
-                    scheduler.step()
+                    if config["cnn"]["training"]["lr_scheduler"]["use"]:
+                        scheduler.step()
+                    
 
                 else:
                     pred = model(images)
