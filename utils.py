@@ -14,6 +14,7 @@ from torchvision import models
 from torchvision.models.feature_extraction import create_feature_extractor
 from torchvision.transforms import transforms
 
+
 from cnn import CNN2, CNN4
 from MultiHeadNetwork import MultiHeadNetwork
 from preprocessing.simple_preprocessor import SimplePreprocessor
