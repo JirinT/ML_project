@@ -9,7 +9,6 @@ import torch.optim as optim
 
 from tqdm import tqdm
 from test import test_model
-from torchviz import make_dot
 from torchview import draw_graph
 from torch.utils.data import DataLoader
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -377,13 +376,6 @@ if __name__ == "__main__":
         print("Visualizing the network...")
         model_graph = draw_graph(model, input_size=(batch_size, 128), device=device)
         model_graph.visual_graph
-
-        # images, _ = next(iter(val_loader))
-        # os.environ["PATH"] += os.pathsep + config["cnn"]["visualization"]["graphviz_path"]
-        # images = images.to(device)
-        # dot = make_dot(model(images), params=dict(best_model.named_parameters()))
-
-        # dot.render(os.path.join(plot_folder_training, "network_graph"), format="png")
 
     # plot the training loss and accuracy
     print("Plotting learning curve")

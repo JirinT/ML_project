@@ -80,6 +80,7 @@ def test_model(model, test_loader, device, config):
 
             return accuracy
 
+# ------------- MAIN -------------
 if __name__ == "__main__":
     config = json.load(open("config.json"))
 

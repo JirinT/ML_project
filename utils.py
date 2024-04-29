@@ -46,7 +46,7 @@ class Visualization():
         labels = ['Train Accuracy', 'Validation Accuracy', 'Train Loss', 'Validation Loss']
         plt.legend(lines, labels, loc='upper left')
 
-        plt.savefig(os.path.join(plot_folder_training, "loss_plot.png"))
+        plt.savefig(os.path.join(plot_folder_training, "loss_plot.svg"), format='svg')
     
     def show_histogram(self, loaders):
         if self.config["cnn"]["model"]["use_multihead"]:
@@ -68,30 +68,30 @@ class Visualization():
                 plt.figure("Histograms for each label", figsize=(13, 8))
                 plt.subplot(2, 2, 1)
                 plt.bar(range(len(counts_flow_rate)), counts_flow_rate)
-                plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+                plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
                 plt.ylabel("Amount of samples")
                 plt.title("Flow Rate")
 
                 plt.subplot(2, 2, 2)
                 plt.bar(range(len(counts_lateral_speed)), counts_lateral_speed)
-                plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+                plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
                 plt.ylabel("Amount of samples")
                 plt.title("Lateral Speed")
 
                 plt.subplot(2, 2, 3)
                 plt.bar(range(len(counts_z_offset)), counts_z_offset)
-                plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+                plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
                 plt.ylabel("Amount of samples")
                 plt.title("Z Offset")
 
                 plt.subplot(2, 2, 4)
                 plt.bar(range(len(counts_hotend_temperature)), counts_hotend_temperature)
-                plt.xticks([0, 1, 2], ['High', 'Good', 'Low'])
+                plt.xticks([0, 1, 2], ['Low', 'Good', 'High'])
                 plt.ylabel("Amount of samples")
                 plt.title("Hotend Temperature")
             
             timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            plt.savefig(os.path.join(self.config["general"]["histogram_path"], f"histogram_multihead_{timestamp}.png"))
+            plt.savefig(os.path.join(self.config["general"]["histogram_path"], f"histogram_multihead_{timestamp}.svg"), format="svg")
 
         else:
             label_counts = {0: 0, 1: 0, 2: 0}

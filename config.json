@@ -91,10 +91,10 @@
             }
         },
         "training": {
-            "batch_size": 16,
+            "batch_size": 32,
             "compute_new_mean_std": false,
             "num_epochs": 1,
-            "num_samples_subset": 40,
+            "num_samples_subset": 100000,
             "num_workers": 4,
             "learning_rate": 0.001,
             "loss_function": "1",
@@ -113,7 +113,7 @@
             },
             "use_weighted_rnd_sampler": false,
             "use_weighted_loss": false,
-            "continue_training": true,
+            "continue_training": false,
             "early_stopping": false,
             "lr_scheduler": {
                 "use": false,
